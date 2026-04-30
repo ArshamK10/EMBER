@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1a1a1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="EMBER">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>EMBER — Antora Energy</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#fff;--sf:#f5f5f5;--sf2:#eaeaea;--bd:#d4d4d4;--tx:#1a1a1a;--tx2:#6b6b6b;--ac:#1a1a1a;--gn:#2e7d32;--yw:#e6a817;--rd:#c62828;--bl:#1565c0;--r:8px;--f:'DM Sans',sans-serif;--m:'JetBrains Mono',monospace}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:var(--f);background:var(--bg);color:var(--tx);min-height:100vh;overflow:hidden;-webkit-text-size-adjust:100%}
+.hdr{padding:12px 20px;display:flex;align-items:center;gap:10px;background:var(--ac);color:#fff;z-index:10}
+.hdr .logo{width:28px;height:28px;border-radius:4px;object-fit:cover}
+.hdr h1{font-size:14px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.hdr-spacer{flex:1}
+
+.view{display:none;height:calc(100vh - 80px);overflow:hidden}.view.on{display:flex}
+
+/* ── Shared ── */
+.btn{font-family:var(--f);font-size:11px;font-weight:500;padding:6px 12px;border:1px solid var(--bd);border-radius:5px;background:var(--bg);color:var(--tx);cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all .12s;white-space:nowrap}
+.btn:hover{background:var(--sf2)}.btn.on{background:var(--ac);border-color:var(--ac);color:#fff}.btn.rd{background:var(--rd);border-color:var(--rd);color:#fff}.btn:disabled{opacity:.3;pointer-events:none}
+.btn-primary{background:var(--ac);color:#fff;border-color:var(--ac)}.btn-primary:hover{opacity:.85}
+.ic{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+input[type=text],input[type=number],select,textarea{font-family:var(--f);font-size:11px;padding:6px 10px;border:1px solid var(--bd);border-radius:5px;background:var(--bg);color:var(--tx);outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--ac)}
+textarea{resize:vertical;min-height:60px}
+.tag{display:inline-block;font-size:9px;font-weight:600;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.5px}
+.tag-g{background:#e8f5e9;color:var(--gn)}.tag-y{background:#fff8e1;color:#b8860b}.tag-r{background:#ffebee;color:var(--rd)}.tag-b{background:#e3f2fd;color:var(--bl)}
+.sep{width:1px;height:22px;background:var(--bd);margin:0 3px}
+.ps{padding:16px;border-bottom:1px solid var(--bd)}.ps h3{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--tx2);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.ps h3 .btn{font-size:9px;padding:3px 8px}
+.sc{background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:12px;margin-bottom:6px}
+.rl{color:var(--gn)}.rm{color:var(--yw)}.rh{color:var(--rd)}
+
+/* ── Dashboard ── */
+.dash{flex:1;overflow-y:auto;padding:24px}
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-top:12px}
+.station-card{border:1px solid var(--bd);border-radius:var(--r);padding:16px;background:var(--bg);cursor:pointer;transition:border-color .15s}
+.station-card:hover{border-color:var(--ac)}
+.station-card h4{font-size:13px;font-weight:700;margin-bottom:4px}
+.station-card .meta{font-size:10px;color:var(--tx2);margin-bottom:8px}
+.station-card .stats{display:flex;gap:12px;font-size:10px;font-family:var(--m)}
+.station-card .stats span{display:flex;align-items:center;gap:4px}
+.progress-bar{height:4px;background:var(--sf2);border-radius:2px;margin-top:10px;overflow:hidden}
+.progress-fill{height:100%;background:var(--gn);border-radius:2px;transition:width .3s}
+.dash-header{display:flex;align-items:center;gap:12px;margin-bottom:8px;flex-wrap:wrap}
+.dash-header h2{font-size:18px;font-weight:700}
+.kpi-row{display:flex;gap:12px;flex-wrap:wrap}
+.kpi{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:14px 18px;min-width:140px}
+.kpi .kpi-val{font-family:var(--m);font-size:22px;font-weight:700}.kpi .kpi-label{font-size:10px;color:var(--tx2);margin-top:2px}
+
+/* ── Capture View ── */
+.cap-layout{flex:1;display:flex;overflow:hidden}
+.cap-left{flex:1;display:flex;flex-direction:column;min-width:0}
+.cap-right{width:370px;overflow-y:auto;background:var(--sf);border-left:1px solid var(--bd);flex-shrink:0}
+.tb{display:flex;gap:5px;padding:8px 12px;border-bottom:1px solid var(--bd);background:var(--bg);flex-wrap:wrap;align-items:center}
+.tb input[type=file]{display:none}
+.ca{flex:1;position:relative;display:flex;align-items:center;justify-content:center;background:#f0f0f0;overflow:hidden}
+.ca video,.ca img{max-width:100%;max-height:100%;display:block}
+#pc{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+.ph{text-align:center;color:var(--tx2);padding:40px}.ph p{font-size:12px;line-height:1.7}
+.ov{position:absolute;padding:5px 10px;border-radius:5px;font-family:var(--m);font-size:11px;pointer-events:none;background:rgba(0,0,0,.75);color:#fff}
+.ri{top:12px;left:12px;display:flex;align-items:center;gap:7px}.ri.h{display:none}
+.rdot{width:7px;height:7px;border-radius:50%;background:var(--rd);animation:rb 1s infinite}@keyframes rb{0%,100%{opacity:1}50%{opacity:.2}}
+.ab{top:12px;right:12px}.ab.h{display:none}
+.pb{bottom:12px;left:12px;font-size:10px}.pb.h{display:none}
+.pcount{bottom:12px;right:12px;font-size:10px}.pcount.h{display:none}
+.sbar{padding:5px 12px;border-top:1px solid var(--bd);font-family:var(--m);font-size:10px;color:var(--tx2);display:flex;gap:16px;background:var(--bg)}
+.sbar .dot{width:5px;height:5px;border-radius:50%;display:inline-block;margin-right:4px}
+.dt-on{background:var(--gn)}.dt-w{background:var(--yw)}.dt-off{background:var(--tx2)}
+.at{width:100%;font-size:10px;border-collapse:collapse}.at tr{border-bottom:1px solid var(--bd)}.at td{padding:5px 2px}.at td:first-child{color:var(--tx2)}.at td:last-child{font-family:var(--m);text-align:right;font-weight:600}
+.ml{display:flex;flex-direction:column;gap:5px}
+.mi{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--bd);border-radius:5px;padding:8px}
+.mi img{width:48px;height:36px;border-radius:3px;object-fit:cover}.mi .inf{flex:1;min-width:0}.mi .il{font-size:10px;font-weight:600}.mi .is{font-family:var(--m);font-size:9px;color:var(--tx2)}
+.mi a{font-size:10px;font-weight:500;color:var(--ac);text-decoration:underline;cursor:pointer;margin-left:3px}
+.es{text-align:center;color:var(--tx2);font-size:10px;padding:12px}
+
+/* Hazard flags */
+.hazard-list{display:flex;flex-direction:column;gap:6px}
+.hazard-item{border-left:3px solid var(--yw);background:var(--sf);border-radius:0 5px 5px 0;padding:8px 10px;font-size:10px}
+.hazard-item.high{border-left-color:var(--rd)}
+.hazard-item .hz-title{font-weight:700;margin-bottom:2px}
+.hazard-item .hz-rec{color:var(--tx2);font-size:9px;margin-top:3px}
+.vision-item{background:var(--sf);border-radius:5px;padding:8px 10px;font-size:10px;margin-bottom:5px;border-left:3px solid var(--bl)}
+.vision-item .vi-title{font-weight:700;margin-bottom:2px;color:var(--bl)}
+.lift-item{background:var(--sf);border-radius:5px;padding:8px 10px;font-size:10px;margin-bottom:5px;border-left:3px solid var(--yw)}
+.lift-item .li-title{font-weight:700;font-family:var(--m);font-size:9px;margin-bottom:2px}
+.ai-badge{display:inline-block;font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;background:var(--bl);color:#fff;text-transform:uppercase;letter-spacing:.5px;margin-left:4px}
+
+/* NIOSH card */
+.niosh-card{background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:12px}
+.niosh-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.niosh-grid label{font-size:10px;color:var(--tx2);display:flex;flex-direction:column;gap:3px}
+.niosh-grid input{width:100%}
+.niosh-result{margin-top:10px;padding:10px;background:var(--sf);border-radius:5px;font-family:var(--m);font-size:11px}
+
+/* Timeline */
+#tw{margin-top:8px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:10px;display:none}#tw.show{display:block}
+#tc{width:100%;height:80px;display:block}
+.tl{display:flex;gap:12px;margin-top:6px;font-size:9px;color:var(--tx2);font-family:var(--m)}
+.tl span::before{content:'';display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:middle}
+.tl-r::before{background:var(--ac)!important}.tl-b::before{background:var(--rd)!important}
+.as{font-size:10px;margin-top:8px;background:var(--bg);border:1px solid var(--bd);border-radius:var(--r);padding:10px;display:none}.as.show{display:block}
+.as table{width:100%;border-collapse:collapse}.as td{padding:4px 2px}.as td:first-child{color:var(--tx2)}.as td:last-child{font-family:var(--m);text-align:right;font-weight:600}
+
+/* Reports View */
+.report-layout{flex:1;overflow-y:auto;padding:24px}
+.report-section{margin-bottom:20px}
+.report-section h3{font-size:12px;font-weight:700;margin-bottom:8px}
+.tha-preview{border:1px solid var(--bd);border-radius:var(--r);padding:20px;background:var(--bg);max-width:800px}
+.tha-preview h2{font-size:16px;margin-bottom:4px}.tha-preview .tha-meta{font-size:10px;color:var(--tx2);margin-bottom:12px}
+.tha-preview table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:12px}
+.tha-preview th,.tha-preview td{border:1px solid var(--bd);padding:6px 8px;text-align:left}
+.tha-preview th{background:var(--sf);font-weight:600;font-size:10px;text-transform:uppercase}
+.narrative-box{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:14px;font-size:11px;line-height:1.6;margin:12px 0;white-space:pre-wrap}
+.narrative-loading{text-align:center;padding:20px;color:var(--tx2);font-size:11px}
+
+/* Review panel */
+.review-panel{border:1px solid var(--bd);border-radius:var(--r);padding:20px;background:var(--bg);max-width:800px;margin-top:16px}
+.review-panel h3{font-size:14px;font-weight:700;margin-bottom:12px}
+.review-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+
+/* Nav bar */
+.nav-bar{display:flex;align-items:center;padding:0 12px;background:var(--ac);border-top:1px solid rgba(255,255,255,.1)}
+.nav-bar .nav{display:flex;gap:2px;width:100%}
+.nav-bar .nav button{flex:1;font-family:var(--f);font-size:11px;font-weight:600;padding:8px 12px;border:none;border-radius:4px 4px 0 0;background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);cursor:pointer;transition:all .12s;text-align:center}
+.nav-bar .nav button.on{background:var(--bg);color:var(--tx)}
+.nav-bar .nav button:hover:not(.on){background:rgba(255,255,255,.2)}
+.hdr-utils{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+body.dark .nav-bar{background:#000;border-top-color:rgba(255,255,255,.05)}
+body.dark .nav-bar .nav button.on{background:var(--bg);color:var(--tx)}
+
+/* Auth screen mobile */
+@media(max-width:480px){
+  .auth-box{padding:20px 16px!important;width:100%!important;max-width:100vw!important}
+  .auth-box .auth-logo{flex-direction:column;gap:6px}
+  .auth-box .auth-logo div{text-align:center}
+  .auth-box .auth-logo h2{font-size:18px}
+  .auth-form input{font-size:16px!important;padding:12px!important}
+  .auth-form .auth-btn{padding:14px!important;font-size:14px!important}
+}
+
+/* Mobile header */
+@media(max-width:900px){
+  .hdr{padding:6px 10px;gap:6px}
+  .hdr h1{font-size:11px}
+  .hdr .logo{width:24px;height:24px}
+  .hdr-utils{gap:2px}
+  .dark-toggle{font-size:8px!important;padding:3px 5px!important}
+  .user-badge{display:none}
+  .nav-bar{padding:0 8px}
+  .nav-bar .nav button{font-size:10px;padding:6px 8px}
+  .view{height:calc(100vh - 72px)!important}
+  .cap-layout{flex-direction:column}
+  .cap-right{width:100%;border-left:none;border-top:1px solid var(--bd);max-height:45vh;overflow-y:auto}
+  .ca{min-height:40vh}
+  .tb{padding:4px 6px;gap:3px;flex-wrap:wrap}
+  .tb .sep{display:none}
+  .btn{padding:5px 7px;font-size:10px}
+  .btn span{display:none}
+  .ic{width:16px;height:16px}
+  .tb select{font-size:10px;padding:4px 6px;min-width:90px;max-width:120px}
+  .dash{padding:10px}
+  .dash-header{gap:6px;flex-wrap:wrap}
+  .dash-header h2{font-size:14px}
+  .dash-grid{grid-template-columns:1fr}
+  .kpi-row{gap:4px}
+  .kpi{padding:8px 10px;min-width:0;flex:1}
+  .kpi .kpi-val{font-size:16px}
+  .kpi .kpi-label{font-size:8px}
+  .station-card{padding:10px}
+  .station-card h4{font-size:11px}
+  .modal{width:95vw!important;padding:14px!important;max-height:85vh!important}
+  .report-layout{padding:10px}
+  .tha-preview{padding:10px}
+  .review-grid{grid-template-columns:1fr}
+  .sbar{font-size:8px;padding:3px 6px}
+}
+@media(max-width:480px){
+  .hdr h1{font-size:10px}
+  .hdr .logo{width:20px;height:20px}
+  .dark-toggle{font-size:7px!important;padding:2px 4px!important}
+  .nav-bar .nav button{font-size:9px;padding:5px 4px}
+  .view{height:calc(100vh - 64px)!important}
+  .ca{min-height:35vh}
+  .cap-right{max-height:40vh}
+  .btn{padding:4px 5px}
+  .ic{width:14px;height:14px}
+  .tb select{min-width:70px!important;font-size:9px}
+  .dash-header h2{font-size:13px}
+  .dash-header .btn-primary{font-size:9px;padding:4px 8px}
+  .kpi .kpi-val{font-size:14px}
+  .ps{padding:8px}
+  .ps h3{font-size:8px;margin-bottom:4px}
+  .sc{padding:6px}
+  .at td{padding:3px 1px;font-size:9px}
+  .niosh-grid{grid-template-columns:1fr}
+  .hazard-item{padding:5px 6px;font-size:9px}
+  .mi{padding:5px;gap:4px}
+  .mi img{width:36px;height:27px}
+  .mi .il{font-size:9px}
+  .mi .is{font-size:8px}
+  .tha-preview h2{font-size:12px}
+  .tha-preview table{font-size:9px}
+  .tha-preview th,.tha-preview td{padding:3px 4px}
+  .review-panel{padding:10px}
+  .report-layout .dash-header .btn{font-size:8px;padding:3px 6px}
+}
+
+</style>
+</head>
+<body>
+<div class="lo" id="lo"><div class="spinner"></div><p>Loading MediaPipe Pose Landmarker</p></div>
+
+<!-- ═══ AUTH SCREEN ═══ -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-box">
+    <div class="auth-logo" style="flex-direction:column;gap:6px">
+      <img src="data:image/jpeg;base64,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" style="width:72px;height:72px;border-radius:8px;cursor:pointer" onclick="devTap()">
+      <h2 style="font-size:22px;letter-spacing:1px;margin-top:4px">Antora Energy</h2>
+      <div style="font-size:13px;color:var(--tx2);letter-spacing:3px;text-transform:uppercase;font-weight:600">EMBER</div>
+      <div style="font-size:9px;color:var(--tx2);letter-spacing:.5px">Ergonomic Monitoring \&amp; Body Evaluation Resource</div>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="on" onclick="showAuthTab('login')">Sign In</button>
+      <button onclick="showAuthTab('register')">Request Access</button>
+    </div>
+    <div id="authLogin" class="auth-form">
+      <label>Email</label>
+      <input type="text" id="loginEmail" placeholder="you@antora.com">
+      <label>Password</label>
+      <input type="password" id="loginPass" placeholder="Password">
+      <button class="auth-btn" onclick="doLogin()">Sign In</button>
+      <div class="auth-msg" id="loginMsg"></div>
+    </div>
+    <div id="authRegister" class="auth-form" style="display:none">
+      <label>Full Name</label>
+      <input type="text" id="regName" placeholder="Jane Smith">
+      <label>Email</label>
+      <input type="text" id="regEmail" placeholder="you@antora.com">
+      <label>Password</label>
+      <input type="password" id="regPass" placeholder="Create a password">
+      <button class="auth-btn" onclick="doRegister()">Request Access</button>
+      <div class="auth-msg" id="regMsg"></div>
+    </div>
+  </div>
+</div>
+
+<div class="hdr">
+  <img class="logo" src="data:image/jpeg;base64,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">
+  <h1>EMBER</h1>
+  <div class="hdr-spacer"></div>
+  <div class="hdr-utils">
+    <button class="dark-toggle" onclick="toggleDark()" id="darkBtn">Dark</button>
+    <button class="dark-toggle" onclick="openApiKeyModal()" id="apiKeyBtn" style="border-color:rgba(255,255,255,.4)">API</button>
+    <button class="dark-toggle" onclick="openSyncModal()" id="syncBtn">Sync</button>
+    <span id="userBadge" class="user-badge"></span>
+    <button class="dark-toggle" id="adminBtn" onclick="openAdmin()" style="display:none">Users</button>
+    <button class="dark-toggle" onclick="doLogout()">Out</button>
+  </div>
+</div>
+<div class="nav-bar">
+  <div class="nav">
+    <button class="on" onclick="showView('dashboard')">Dashboard</button>
+    <button onclick="showView('capture')">Capture</button>
+    <button onclick="showView('reports')">Reports</button>
+  </div>
+</div></div>
+
+<!-- ═══ DASHBOARD VIEW ═══ -->
+<div class="view on" id="v-dashboard">
+  <div class="dash">
+    <div class="dash-header">
+      <h2>Zanker Production Stations</h2>
+      <div class="hdr-spacer"></div>
+      <button class="btn btn-primary" onclick="openAddStation()">+ Add Station</button>
+    </div>
+    <div class="kpi-row" id="kpiRow">
+      <div class="kpi"><div class="kpi-val" id="kpiStations">0</div><div class="kpi-label">Stations</div></div>
+      <div class="kpi"><div class="kpi-val" id="kpiComplete">0</div><div class="kpi-label">THAs Complete</div></div>
+      <div class="kpi"><div class="kpi-val" id="kpiHazards">0</div><div class="kpi-label">Hazards Flagged</div></div>
+      <div class="kpi"><div class="kpi-val" id="kpiAvgRula">—</div><div class="kpi-label">Avg RULA</div></div>
+    </div>
+    <div style="margin-top:12px"><input type="text" id="stationSearch" placeholder="Search stations by name or area..." oninput="filterStations()" style="width:100%;padding:8px 12px;font-size:12px"></div>
+    <div class="dash-grid" id="stationGrid"></div>
+  </div>
+</div>
+
+<!-- ═══ CAPTURE VIEW ═══ -->
+<div class="view" id="v-capture">
+  <div class="cap-layout">
+    <div class="cap-left">
+      <div class="tb">
+        <select id="stationSelect" style="font-size:11px;padding:5px 8px;min-width:160px"><option value="">— No Station —</option></select>
+        <div class="sep"></div>
+        <button class="btn" id="bW" onclick="toggleWebcam()"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="13" r="3"/><path d="M2 9V7a2 2 0 012-2h3l2-2h6l2 2h3a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V9z"/></svg><span>Webcam</span></button>
+        <button class="btn" id="bFlip" onclick="flipCamera()" disabled title="Flip Camera"><svg class="ic" viewBox="0 0 24 24"><path d="M20 7l-4-4v3H8a4 4 0 00-4 4v2"/><path d="M4 17l4 4v-3h8a4 4 0 004-4v-2"/></svg><span>Flip</span></button>
+        <label class="btn"><svg class="ic" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>Upload</span><input type="file" accept="image/*,video/*,.webm,.mp4,.mov" onchange="handleUpload(event)"></label>
+        <div class="sep"></div>
+        <button class="btn" id="bRec" onclick="toggleRec()" disabled><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" fill="currentColor" stroke="none"/></svg><span>Record</span></button>
+        <button class="btn" id="bSnap" onclick="snap()" disabled><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="12" cy="12" r="3"/></svg><span>Snapshot</span></button>
+        <div class="sep"></div>
+        <button class="btn" id="bAna" onclick="analyzeVideo()" disabled><svg class="ic" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Analyze Video</span></button>
+        <button class="btn" id="bExp" onclick="exportSnaps()" disabled><svg class="ic" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span>Export</span></button>
+        <div class="sep"></div>
+        <button class="btn" onclick="toggleFullscreen()"><svg class="ic" viewBox="0 0 24 24"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg><span>Fullscreen</span></button>
+        <div class="sep"></div>
+        <button class="btn" id="bScan" onclick="aiScan()" disabled style="border-color:var(--bl);color:var(--bl)"><svg class="ic" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg><span>AI Scan</span></button>
+        <button class="btn" id="bClassify" onclick="classifyTask()" disabled style="border-color:var(--bl);color:var(--bl)"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg><span>Classify Task</span></button>
+      </div>
+      <div class="ca" id="ca">
+        <video id="vid" autoplay playsinline style="display:none"></video>
+        <img id="uimg" style="display:none" crossorigin="anonymous">
+        <canvas id="pc"></canvas>
+        <div class="ov ri h" id="ri"><div class="rdot"></div><span id="rt">00:00</span></div>
+        <div class="ov ab h" id="ab">Analyzing...</div>
+        <div class="ov pb h" id="pb"></div>
+        <div class="ov pcount h" id="pcount"></div>
+        <div class="ph" id="ph"><div style="margin-bottom:10px"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#999" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><line x1="12" y1="7" x2="12" y2="15"/><line x1="12" y1="15" x2="9" y2="21"/><line x1="12" y1="15" x2="15" y2="21"/><line x1="12" y1="10" x2="8" y2="13"/><line x1="12" y1="10" x2="16" y2="13"/></svg></div><p>Select a station, then start webcam or upload media.</p></div>
+      </div>
+      <div class="sbar"><span><span class="dot dt-off" id="sd"></span><span id="stxt">Idle</span></span><span id="lc"></span><span id="plbl"></span></div>
+    </div>
+    <div class="cap-right">
+      <div class="ps"><h3>Risk Assessment</h3>
+        <div class="sc"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><span style="font-weight:700;font-size:12px">RULA</span><span style="font-family:var(--m);font-size:24px;font-weight:700" id="rulaS">&mdash;</span></div><div style="font-size:10px;color:var(--tx2)" id="rulaD">Waiting for pose data</div><div class="progress-bar" style="margin-top:7px"><div class="progress-fill" id="rulaB" style="width:0;background:var(--tx2)"></div></div></div>
+        <div class="sc"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><span style="font-weight:700;font-size:12px">REBA</span><span style="font-family:var(--m);font-size:24px;font-weight:700" id="rebaS">&mdash;</span></div><div style="font-size:10px;color:var(--tx2)" id="rebaD">Waiting for pose data</div><div class="progress-bar" style="margin-top:7px"><div class="progress-fill" id="rebaB" style="width:0;background:var(--tx2)"></div></div></div>
+      </div>
+      <div class="ps"><h3>NIOSH Lifting Equation</h3>
+        <div class="niosh-card">
+          <div class="niosh-grid">
+            <label>Load Weight (lbs)<input type="number" id="nioshLoad" value="10" min="0" step="1" onchange="calcNIOSH()"></label>
+            <label>Frequency (/min)<input type="number" id="nioshFreq" value="1" min="0" step="0.5" onchange="calcNIOSH()"></label>
+            <label>Coupling<select id="nioshCoupling" onchange="calcNIOSH()"><option value="1">Good</option><option value="0.95" selected>Fair</option><option value="0.9">Poor</option></select></label>
+            <label>Duration<select id="nioshDur" onchange="calcNIOSH()"><option value="1">≤1 hr</option><option value="0.95" selected>1-2 hr</option><option value="0.85">>2 hr</option></select></label>
+          </div>
+          <div style="font-size:9px;color:var(--tx2);margin-top:6px">H, V, D, A auto-estimated from pose data</div>
+          <div class="niosh-result" id="nioshResult">RWL: — lbs &nbsp; LI: —</div>
+        </div>
+      </div>
+      <div class="ps"><h3>AI Vision Findings</h3>
+        <div id="visionFindings"><div class="es">Run AI Scan to analyze the workspace.</div></div>
+      </div>
+      <div class="ps"><h3>Lift Events <span id="liftCount" style="font-family:var(--m);font-size:9px;color:var(--tx2)"></span></h3>
+        <div class="ml" id="liftList"><div class="es">Lift detection active during webcam.</div></div>
+      </div>
+      <div class="ps"><h3>Hazard Flags</h3>
+        <div class="hazard-list" id="hazardList"><div class="es">No hazards detected yet.</div></div>
+      </div>
+      <div class="ps"><h3>Joint Angles</h3>
+        <table class="at"><tr><td>Neck</td><td id="jNk">&mdash;</td></tr><tr><td>Trunk</td><td id="jTr">&mdash;</td></tr><tr><td>L Shoulder</td><td id="jLS">&mdash;</td></tr><tr><td>R Shoulder</td><td id="jRS">&mdash;</td></tr><tr><td>L Elbow</td><td id="jLE">&mdash;</td></tr><tr><td>R Elbow</td><td id="jRE">&mdash;</td></tr><tr><td>L Knee</td><td id="jLK">&mdash;</td></tr><tr><td>R Knee</td><td id="jRK">&mdash;</td></tr><tr><td>L Wrist Dev.</td><td id="jLW">&mdash;</td></tr><tr><td>R Wrist Dev.</td><td id="jRW">&mdash;</td></tr></table>
+      </div>
+      <div class="ps"><h3>Analysis Timeline <button class="btn" id="bEA" onclick="exportAnalysis()" style="display:none">Export CSV</button></h3>
+        <div id="tw"><canvas id="tc"></canvas><div class="tl"><span class="tl-r">RULA</span><span class="tl-b">REBA</span></div></div>
+        <div class="as" id="asum"><table id="sT"></table></div>
+        <div class="es" id="te">Analyze a video to see timeline.</div>
+      </div>
+      <div class="ps"><h3>Recordings</h3><div class="ml" id="rl"><div class="es">No recordings yet.</div></div></div>
+      <div class="ps"><h3>Snapshots</h3><div class="ml" id="sl"><div class="es">No snapshots yet.</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ REPORTS VIEW ═══ -->
+<div class="view" id="v-reports">
+  <div class="report-layout">
+    <div class="report-section">
+      <div class="dash-header">
+        <h2>Task Hazard Analysis Reports</h2>
+        <div class="hdr-spacer"></div>
+        <select id="reportStation" style="font-size:11px;padding:6px 10px;min-width:180px" onchange="previewTHA()">
+          <option value="">— Select Station —</option>
+        </select>
+        <label class="btn"><svg class="ic" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload Video<input type="file" accept="video/*,.webm,.mp4,.mov" onchange="uploadAndAnalyze(event)" style="display:none"></label>
+        <button class="btn" id="btnReportAnalyze" onclick="analyzeForReport()" disabled><svg class="ic" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Analyze Video</button>
+        <button class="btn" onclick="generateNarrative()">Generate AI Narrative</button>
+        <label class="btn" style="border-color:var(--bl);color:var(--bl)"><svg class="ic" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span>Analyze Video</span><input type="file" accept="video/*,.webm,.mp4,.mov" onchange="analyzeForReport(event)" style="display:none"></label>
+        <button class="btn btn-primary" onclick="exportTHA_PDF()">Export PDF</button>
+        <button class="btn btn-primary" onclick="exportTHA_Excel()">Export Excel</button>
+      </div>
+    </div>
+    <div id="thaPreview"></div>
+    <video id="reportVid" style="display:none"></video>
+    <div id="reviewPanel"></div>
+    <div id="reportAnalysisStatus" style="display:none;margin-top:12px;padding:16px;border:1px solid var(--bd);border-radius:var(--r);background:var(--sf)">
+      <div style="display:flex;align-items:center;gap:10px"><div class="spinner" style="width:20px;height:20px;border-width:2px"></div><span style="font-size:12px" id="reportAnalysisText">Analyzing video...</span></div>
+      <div class="progress-bar" style="margin-top:10px;height:6px"><div class="progress-fill" id="reportAnalysisBar" style="width:0"></div></div>
+    </div>
+    <video id="reportVid" style="display:none"></video>
+  </div>
+</div>
+
+<!-- ═══ ADD STATION MODAL ═══ -->
+<div class="modal-bg h" id="modalBg">
+  <div class="modal">
+    <h3 id="modalTitle">Add Production Station</h3>
+    <label>Station Name</label>
+    <input type="text" id="mName" placeholder="e.g. Assembly Line A" style="width:100%">
+    <label>Area / Zone</label>
+    <input type="text" id="mArea" placeholder="e.g. Main Floor" style="width:100%">
+    <label>Task Description</label>
+    <textarea id="mDesc" placeholder="Brief description of the task performed at this station..." style="width:100%"></textarea>
+    <div class="btn-row">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveStation()">Save Station</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ADMIN PANEL MODAL ═══ -->
+<div class="modal-bg h" id="adminModal">
+  <div class="modal" style="width:500px">
+    <h3>User Management</h3>
+    <div class="admin-panel" id="adminPanel"></div>
+    <div class="btn-row"><button class="btn" onclick="document.getElementById('adminModal').classList.add('h')">Close</button></div>
+  </div>
+</div>
+
+<!-- ═══ API KEY MODAL ═══ -->
+<div class="modal-bg h" id="apiKeyModal">
+  <div class="modal">
+    <h3>Anthropic API Key</h3>
+    <p style="font-size:11px;color:var(--tx2);margin-bottom:8px">Required for AI Scan, Classify Task, and Generate Narrative. Your key is stored locally in this browser only.</p>
+    <label>API Key</label>
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-..." style="width:100%;font-family:var(--m)">
+    <div style="margin-top:8px;font-size:10px;color:var(--tx2)">Get a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--ac)">console.anthropic.com</a></div>
+    <div class="btn-row">
+      <button class="btn" onclick="clearApiKey()" style="color:var(--rd);border-color:var(--rd)">Clear Key</button>
+      <button class="btn" onclick="document.getElementById('apiKeyModal').classList.add('h')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveApiKey()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SYNC SETTINGS MODAL ═══ -->
+<div class="modal-bg h" id="syncModal">
+  <div class="modal">
+    <h3>Cloud Sync</h3>
+    <p style="font-size:11px;color:var(--tx2);margin-bottom:8px">Sync all stations, scores, users, and reviews across devices via your GitHub repo. Data is stored as a JSON file in your repository.</p>
+    <label>GitHub Username</label>
+    <input type="text" id="syncOwner" placeholder="arshamk10" style="width:100%">
+    <label>Repository Name</label>
+    <input type="text" id="syncRepo" placeholder="EMBER" style="width:100%">
+    <label>Personal Access Token</label>
+    <input type="password" id="syncToken" placeholder="ghp_..." style="width:100%;font-family:var(--m)">
+    <div style="margin-top:6px;font-size:9px;color:var(--tx2)">Token needs <strong>repo</strong> permission. <a href="https://github.com/settings/tokens/new?scopes=repo&description=EMBER+Sync" target="_blank" style="color:var(--ac)">Create one here</a></div>
+    <div class="auth-msg" id="syncMsg" style="margin-top:8px"></div>
+    <div class="btn-row">
+      <button class="btn" onclick="pullFromCloud()" style="border-color:var(--bl);color:var(--bl)">Pull Data</button>
+      <button class="btn" onclick="pushToCloud()" style="border-color:var(--gn);color:var(--gn)">Push Data</button>
+      <button class="btn" onclick="document.getElementById('syncModal').classList.add('h')">Close</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import{PoseLandmarker,FilesetResolver,DrawingUtils}from"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/vision_bundle.mjs";
+
+/* ═══ AUTH SYSTEM ═══ */
+function getUsers(){try{return JSON.parse(localStorage.getItem('antora_users'))||[]}catch(e){return[]}}
+function saveUsers(u){localStorage.setItem('antora_users',JSON.stringify(u))}
+function getSession(){try{return JSON.parse(sessionStorage.getItem('antora_session'))}catch(e){return null}}
+function setSession(u){sessionStorage.setItem('antora_session',JSON.stringify(u))}
+
+// Seed admin account
+(function(){
+  const users=getUsers();
+  if(!users.find(u=>u.email==='admin@antora.com')){
+    users.push({name:'Admin',email:'admin@antora.com',pass:'antora2026',role:'admin',status:'approved',created:new Date().toISOString()});
+    saveUsers(users);
+  }
+  // Check existing session
+  const sess=getSession();
+  if(sess&&getUsers().find(u=>u.email===sess.email&&u.status==='approved')){
+    enterApp(sess);
+  }
+})();
+
+window.showAuthTab=function(tab){
+  document.getElementById('authLogin').style.display=tab==='login'?'':'none';
+  document.getElementById('authRegister').style.display=tab==='register'?'':'none';
+  const btns=document.querySelectorAll('.auth-tabs button');
+  btns[0].className=tab==='login'?'on':'';
+  btns[1].className=tab==='register'?'on':'';
+  document.getElementById('loginMsg').className='auth-msg';
+  document.getElementById('regMsg').className='auth-msg';
+};
+
+window.doLogin=function(){
+  const email=document.getElementById('loginEmail').value.trim().toLowerCase();
+  const pass=document.getElementById('loginPass').value;
+  const msg=document.getElementById('loginMsg');
+  if(!email||!pass){msg.textContent='Enter email and password.';msg.className='auth-msg err';return}
+  const users=getUsers();
+  const user=users.find(u=>u.email===email&&u.pass===pass);
+  if(!user){msg.textContent='Invalid email or password.';msg.className='auth-msg err';return}
+  if(user.status==='pending'){msg.textContent='Your account is pending admin approval.';msg.className='auth-msg err';return}
+  if(user.status==='denied'){msg.textContent='Your access request was denied.';msg.className='auth-msg err';return}
+  setSession({name:user.name,email:user.email,role:user.role});
+  enterApp(user);
+};
+
+window.doRegister=function(){
+  const name=document.getElementById('regName').value.trim();
+  const email=document.getElementById('regEmail').value.trim().toLowerCase();
+  const pass=document.getElementById('regPass').value;
+  const msg=document.getElementById('regMsg');
+  if(!name||!email||!pass){msg.textContent='All fields are required.';msg.className='auth-msg err';return}
+  const users=getUsers();
+  if(users.find(u=>u.email===email)){msg.textContent='An account with this email already exists.';msg.className='auth-msg err';return}
+  users.push({name,email,pass,role:'assessor',status:'pending',created:new Date().toISOString()});
+  saveUsers(users);
+  msg.textContent='Access request submitted. An admin will review your account.';msg.className='auth-msg ok';
+  document.getElementById('regName').value='';document.getElementById('regEmail').value='';document.getElementById('regPass').value='';
+};
+
+/* ═══ DEV MODE — tap logo 7 times ═══ */
+let devTaps=0,devTimer=null;
+window.devTap=function(){
+  devTaps++;
+  clearTimeout(devTimer);
+  devTimer=setTimeout(()=>{devTaps=0},2000);
+  if(devTaps>=7){
+    devTaps=0;
+    setSession({name:'Developer',email:'dev',role:'admin'});
+    enterApp({name:'Developer',email:'dev',role:'admin'});
+  }
+};
+
+function enterApp(user){
+  document.getElementById('authScreen').classList.add('h');
+  document.getElementById('userBadge').textContent=user.name+' ('+user.role+')';
+  if(user.role==='admin')document.getElementById('adminBtn').style.display='';
+}
+
+window.doLogout=function(){
+  sessionStorage.removeItem('antora_session');
+  document.getElementById('authScreen').classList.remove('h');
+  document.getElementById('adminBtn').style.display='none';
+  document.getElementById('loginEmail').value='';document.getElementById('loginPass').value='';
+  document.getElementById('loginMsg').className='auth-msg';
+};
+
+window.openAdmin=function(){
+  const users=getUsers();
+  const rows=users.filter(u=>u.email!=='admin@antora.com').map(u=>{
+    const actions=u.status==='pending'?
+      `<button class="btn" style="padding:2px 8px;font-size:9px" onclick="approveUser('${u.email}')">Approve</button>
+       <button class="btn" style="padding:2px 8px;font-size:9px;color:var(--rd);border-color:var(--rd)" onclick="denyUser('${u.email}')">Deny</button>`:
+      u.status==='approved'?
+      `<span class="tag tag-g">Approved</span> <button class="btn" style="padding:2px 8px;font-size:9px;color:var(--rd);border-color:var(--rd)" onclick="removeUser('${u.email}')">Remove</button>`:
+      `<span class="tag tag-r">Denied</span> <button class="btn" style="padding:2px 8px;font-size:9px" onclick="approveUser('${u.email}')">Approve</button>`;
+    return`<tr><td>${u.name}</td><td>${u.email}</td><td>${u.role}</td><td>${actions}</td></tr>`;
+  }).join('');
+  document.getElementById('adminPanel').innerHTML=users.length<=1?
+    '<div class="es">No user requests yet.</div>':
+    `<table><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead><tbody>${rows}</tbody></table>`;
+  document.getElementById('adminModal').classList.remove('h');
+};
+
+window.approveUser=function(email){const u=getUsers();const i=u.find(x=>x.email===email);if(i){i.status='approved';saveUsers(u);openAdmin()}};
+window.denyUser=function(email){const u=getUsers();const i=u.find(x=>x.email===email);if(i){i.status='denied';saveUsers(u);openAdmin()}};
+window.removeUser=function(email){if(!confirm('Remove this user?'))return;saveUsers(getUsers().filter(u=>u.email!==email));openAdmin()};
+
+const LM={NOSE:0,L_EAR:7,R_EAR:8,L_SHOULDER:11,R_SHOULDER:12,L_ELBOW:13,R_ELBOW:14,L_WRIST:15,R_WRIST:16,L_INDEX:19,R_INDEX:20,L_HIP:23,R_HIP:24,L_KNEE:25,R_KNEE:26,L_ANKLE:27,R_ANKLE:28};
+
+/* ═══ RULA TABLES ═══ */
+const RA=[
+ [[[1,2],[2,2],[2,3],[3,3]],[[2,2],[2,2],[3,3],[3,3]],[[2,3],[3,3],[3,3],[4,4]]],
+ [[[2,3],[3,3],[3,4],[4,4]],[[3,3],[3,3],[3,4],[4,4]],[[3,4],[4,4],[4,4],[5,5]]],
+ [[[3,3],[4,4],[4,4],[5,5]],[[3,4],[4,4],[4,4],[5,5]],[[4,4],[4,4],[4,5],[5,5]]],
+ [[[4,4],[4,4],[4,5],[5,5]],[[4,4],[4,4],[4,5],[5,5]],[[4,4],[4,5],[5,5],[6,6]]],
+ [[[5,5],[5,5],[5,6],[6,7]],[[5,6],[6,6],[6,7],[7,7]],[[6,6],[6,7],[7,7],[7,8]]],
+ [[[7,7],[7,7],[7,8],[8,9]],[[8,8],[8,8],[8,9],[9,9]],[[9,9],[9,9],[9,9],[9,9]]]
+];
+const RB=[[[1,3],[2,3],[3,4],[5,5],[6,6],[7,7]],[[2,3],[2,3],[4,5],[5,5],[6,7],[7,7]],[[3,3],[3,4],[4,5],[5,6],[6,7],[7,7]],[[5,5],[5,6],[6,7],[7,7],[7,7],[8,8]],[[7,7],[7,7],[7,8],[8,8],[8,8],[8,8]],[[8,8],[8,8],[8,8],[8,9],[9,9],[9,9]]];
+const RC=[[1,2,3,3,4,5,5],[2,2,3,4,4,5,5],[3,3,3,4,4,5,6],[3,3,3,4,5,6,6],[4,4,4,5,6,7,7],[4,4,5,6,6,7,7],[5,5,6,6,7,7,7],[5,5,6,7,7,7,7]];
+
+/* ═══ REBA TABLES ═══ */
+const BA=[[[1,2,3,4],[1,2,3,4],[3,3,5,6]],[[2,3,4,5],[3,4,5,6],[4,5,6,7]],[[2,4,5,6],[4,5,6,7],[5,6,7,8]],[[3,5,6,7],[5,6,7,8],[6,7,8,9]],[[4,6,7,8],[6,7,8,9],[7,8,9,9]]];
+const BB=[[[1,2,2],[1,2,3]],[[1,2,3],[2,3,4]],[[3,4,5],[4,5,5]],[[4,5,5],[5,6,7]],[[6,7,8],[7,8,8]],[[7,8,8],[8,9,9]]];
+const BC=[[1,1,1,2,3,3,4,5,6,7,7,7],[1,2,2,3,4,4,5,6,6,7,7,8],[2,3,3,3,4,5,6,7,7,8,8,8],[3,4,4,4,5,6,7,8,8,9,9,9],[4,4,4,5,6,7,8,8,9,9,9,9],[6,6,6,7,8,8,9,9,10,10,10,10],[7,7,7,8,9,9,9,10,10,11,11,11],[8,8,8,9,10,10,10,10,10,11,11,11],[9,9,9,10,10,10,11,11,11,12,12,12],[10,10,10,11,11,11,11,12,12,12,12,12],[11,11,11,11,12,12,12,12,12,12,12,12],[12,12,12,12,12,12,12,12,12,12,12,12]];
+
+/* ═══ STATE ═══ */
+let plm=null,wcRun=false,lastTS=-1,animId=null;
+let cameraFacing='environment';
+let snaps=[],recs=[],latA=null,latS=null;
+let mr=null,recC=[],isRec=false,recSt=0,recTmr=null,recDI=null;
+let aData=[],isAna=false,vidLoaded=false;
+let stations=[];
+
+/* ═══ DATA PERSISTENCE ═══ */
+function saveStations(){
+  try{
+    // Clone stations and strip non-serializable data
+    const data=stations.map(s=>{
+      const clone={...s};
+      // analysisData can be large - keep it but cap at 500 frames
+      if(clone.analysisData&&clone.analysisData.length>500)clone.analysisData=clone.analysisData.slice(0,500);
+      return clone;
+    });
+    localStorage.setItem('ember_stations',JSON.stringify(data));
+  }catch(e){
+    console.warn('Storage save failed:',e.message);
+    // If quota exceeded, try saving without analysis data
+    try{
+      const lite=stations.map(s=>{const c={...s};delete c.analysisData;return c});
+      localStorage.setItem('ember_stations',JSON.stringify(lite));
+    }catch(e2){console.error('Storage save failed completely:',e2.message)}
+  }
+}
+function loadStations(){
+  try{
+    const raw=localStorage.getItem('ember_stations');
+    if(raw){stations=JSON.parse(raw);return true}
+  }catch(e){console.warn('Storage load failed:',e.message)}
+  return false;
+}
+let smoothed=null;
+const EMA=0.35;
+const vid=document.getElementById('vid'),uimg=document.getElementById('uimg'),cv=document.getElementById('pc'),cx=cv.getContext('2d'),phEl=document.getElementById('ph');
+
+/* ═══ INIT ═══ */
+async function init(){
+  const v=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/wasm");
+  plm=await PoseLandmarker.createFromOptions(v,{baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",delegate:"GPU"},runningMode:"VIDEO",numPoses:3,minPoseDetectionConfidence:0.5,minTrackingConfidence:0.5});
+  document.getElementById('lo').classList.add('h');ss('ready','Ready');
+}
+init();
+
+/* ═══ MATH ═══ */
+function a3(a,b,c){const ab={x:a.x-b.x,y:a.y-b.y,z:(a.z||0)-(b.z||0)},cb={x:c.x-b.x,y:c.y-b.y,z:(c.z||0)-(b.z||0)};const d=ab.x*cb.x+ab.y*cb.y+ab.z*cb.z,m1=Math.hypot(ab.x,ab.y,ab.z),m2=Math.hypot(cb.x,cb.y,cb.z);if(!m1||!m2)return 0;return Math.acos(Math.min(1,Math.max(-1,d/(m1*m2))))*57.2958}
+function mid(a,b){return{x:(a.x+b.x)/2,y:(a.y+b.y)/2,z:((a.z||0)+(b.z||0))/2}}
+function cl(v,lo,hi){return Math.max(lo,Math.min(hi,v))}
+
+let _saveTimer=null;
+function debounceSave(){clearTimeout(_saveTimer);_saveTimer=setTimeout(saveStations,3000)}
+
+function rawAng(lm){const hM=mid(lm[LM.L_HIP],lm[LM.R_HIP]),sM=mid(lm[LM.L_SHOULDER],lm[LM.R_SHOULDER]),eM=mid(lm[LM.L_EAR],lm[LM.R_EAR]);const vUp=p=>({x:p.x,y:p.y-1,z:p.z||0});
+return{neck:a3(eM,sM,vUp(sM)),trunk:a3(sM,hM,vUp(hM)),lS:a3(lm[LM.L_ELBOW],lm[LM.L_SHOULDER],lm[LM.L_HIP]),rS:a3(lm[LM.R_ELBOW],lm[LM.R_SHOULDER],lm[LM.R_HIP]),lE:a3(lm[LM.L_SHOULDER],lm[LM.L_ELBOW],lm[LM.L_WRIST]),rE:a3(lm[LM.R_SHOULDER],lm[LM.R_ELBOW],lm[LM.R_WRIST]),lK:a3(lm[LM.L_HIP],lm[LM.L_KNEE],lm[LM.L_ANKLE]),rK:a3(lm[LM.R_HIP],lm[LM.R_KNEE],lm[LM.R_ANKLE]),lW:Math.abs(180-a3(lm[LM.L_ELBOW],lm[LM.L_WRIST],lm[LM.L_INDEX])),rW:Math.abs(180-a3(lm[LM.R_ELBOW],lm[LM.R_WRIST],lm[LM.R_INDEX])),
+// For NIOSH: wrist height (V), horizontal distance (H)
+wristY:Math.min(lm[LM.L_WRIST].y,lm[LM.R_WRIST].y),ankleY:Math.max(lm[LM.L_ANKLE].y,lm[LM.R_ANKLE].y),hipY:mid(lm[LM.L_HIP],lm[LM.R_HIP]).y,
+wristX:mid(lm[LM.L_WRIST],lm[LM.R_WRIST]).x,ankleX:mid(lm[LM.L_ANKLE],lm[LM.R_ANKLE]).x
+}}
+
+function smAng(r){if(!smoothed){smoothed={...r};return smoothed}for(const k of Object.keys(r))if(typeof r[k]==='number')smoothed[k]=smoothed[k]*(1-EMA)+r[k]*EMA;return{...smoothed}}
+function detectPosture(a){return(a.lK<150&&a.rK<150)?'seated':'standing'}
+
+function rulaComp(a,p){const sh=Math.max(a.lS,a.rS);let ua=sh<=20?1:sh<=45?2:sh<=90?3:4;const el=(a.lE+a.rE)/2;let la=(el>=60&&el<=100)?1:2;const wr=Math.max(a.lW,a.rW);let ws=wr<=5?1:wr<=15?2:3;let wt=1;let nk=a.neck<=10?1:a.neck<=20?2:a.neck<=30?3:a.neck<=45?4:5;let tr;if(p==='seated'&&a.trunk<=15)tr=1;else tr=a.trunk<=5?1:a.trunk<=20?2:a.trunk<=60?3:4;let lg=1;return{ua:cl(ua,1,6),la:cl(la,1,3),wr:cl(ws,1,4),wt:cl(wt,1,2),nk:cl(nk,1,6),tr:cl(tr,1,6),lg:cl(lg,1,2)}}
+
+function compRULA(c){const sA=RA[c.ua-1][c.la-1][c.wr-1][c.wt-1];const sB=RB[c.nk-1][c.tr-1][c.lg-1];return RC[cl(sA-1,0,7)][cl(sB-1,0,6)]}
+
+function rebaComp(a,p){let tr=a.trunk<=5?1:a.trunk<=20?2:a.trunk<=60?3:4;let nk=a.neck<=20?1:2;let lg;if(p==='seated')lg=1;else{const kd=Math.max(Math.abs(180-a.lK),Math.abs(180-a.rK));lg=kd<=15?1:kd<=60?2:3}const sh=Math.max(a.lS,a.rS);let ua=sh<=20?1:sh<=45?2:sh<=90?3:sh<=135?4:5;const el=(a.lE+a.rE)/2;let la=(el>=60&&el<=100)?1:2;const wr=Math.max(a.lW,a.rW);let ws=wr<=15?1:wr<=30?2:3;return{tr:cl(tr,1,5),nk:cl(nk,1,3),lg:cl(lg,1,4),ua:cl(ua,1,6),la:cl(la,1,2),wr:cl(ws,1,3)}}
+
+function compREBA(c){const sA=BA[c.tr-1][c.nk-1][c.lg-1];const sB=BB[c.ua-1][c.la-1][c.wr-1];return BC[cl(sA-1,0,11)][cl(sB-1,0,11)]}
+
+/* ═══ NIOSH ═══ */
+function calcNIOSH(){
+  const load=parseFloat(document.getElementById('nioshLoad').value)||0;
+  const freq=parseFloat(document.getElementById('nioshFreq').value)||1;
+  const coupling=parseFloat(document.getElementById('nioshCoupling').value);
+  const durMult=parseFloat(document.getElementById('nioshDur').value);
+
+  // Estimate from pose if available
+  let H=15,V=30,D=10,A=0; // defaults (inches, inches, inches, degrees)
+  if(latA){
+    // H: horizontal distance from hands to ankles (scaled to ~inches assuming body proportions)
+    const hDist=Math.abs(latA.wristX-latA.ankleX);
+    H=cl(hDist*60+10,10,25); // rough scaling
+    // V: wrist height from floor (scaled)
+    const bodyH=latA.ankleY-latA.wristY; // in normalized coords (0-1)
+    V=cl(bodyH*65,0,70); // inches
+    // D: vertical travel distance (would need tracking, estimate from trunk flexion)
+    D=cl(latA.trunk*0.5+5,5,30);
+    // A: asymmetry from trunk (simplified)
+    A=cl(Math.abs(latA.lS-latA.rS)*0.5,0,135);
+  }
+
+  const LC=51; // load constant lbs
+  const HM=cl(10/H,0,1);
+  const VM=cl(1-0.0075*Math.abs(V-30),0,1);
+  const DM=cl(0.82+1.8/D,0,1);
+  const AM=cl(1-0.0032*A,0,1);
+  // FM from frequency table (simplified)
+  const FM=freq<=0.2?1.0:freq<=1?0.94:freq<=4?0.84:freq<=6?0.75:freq<=9?0.52:0.37;
+  const CM=coupling;
+
+  const RWL=LC*HM*VM*DM*AM*FM*CM*durMult;
+  const LI=RWL>0?load/RWL:0;
+
+  const el=document.getElementById('nioshResult');
+  const liClass=LI<=1?'rl':LI<=2?'rm':'rh';
+  el.innerHTML=`RWL: <strong>${RWL.toFixed(1)}</strong> lbs &nbsp; LI: <strong class="${liClass}">${LI.toFixed(2)}</strong> &nbsp; ${LI<=1?'Acceptable':LI<=2?'Increased risk':'High risk'}<br><span style="font-size:9px;color:var(--tx2)">H=${H.toFixed(0)}" V=${V.toFixed(0)}" D=${D.toFixed(0)}" A=${A.toFixed(0)}° FM=${FM} CM=${CM}</span>`;
+
+  // Store for reports
+  window._niosh={RWL,LI,H,V,D,A,FM,CM,load,freq};
+}
+
+/* ═══ HAZARD DETECTION ═══ */
+function detectHazards(a,rula,reba){
+  const hz=[];
+  if(a.trunk>30)hz.push({level:'high',title:`Excessive trunk flexion (${a.trunk.toFixed(0)}°)`,rec:'Raise work surface height or provide adjustable workstation to reduce bending.'});
+  else if(a.trunk>15)hz.push({level:'med',title:`Moderate trunk flexion (${a.trunk.toFixed(0)}°)`,rec:'Consider anti-fatigue mats and periodic posture breaks.'});
+  if(a.neck>25)hz.push({level:'high',title:`Neck flexion risk (${a.neck.toFixed(0)}°)`,rec:'Reposition monitor/work area to eye level. Reduce downward gaze angle.'});
+  const sh=Math.max(a.lS,a.rS);
+  if(sh>90)hz.push({level:'high',title:`Overhead reaching (${sh.toFixed(0)}°)`,rec:'Lower storage/work items below shoulder height. Use step platforms for high shelves.'});
+  else if(sh>60)hz.push({level:'med',title:`Elevated arm position (${sh.toFixed(0)}°)`,rec:'Bring work items closer to body and below shoulder height.'});
+  const wr=Math.max(a.lW,a.rW);
+  if(wr>25)hz.push({level:'med',title:`Wrist deviation (${wr.toFixed(0)}°)`,rec:'Use ergonomic tool handles. Align wrist with forearm during tasks.'});
+  if(window._niosh&&window._niosh.LI>1){
+    hz.push({level:window._niosh.LI>2?'high':'med',title:`NIOSH Lifting Index ${window._niosh.LI.toFixed(2)} — ${window._niosh.LI>2?'high':'increased'} risk`,rec:'Reduce load weight, use mechanical assists, or reposition load origin/destination.'});
+  }
+  if(rula>=5)hz.push({level:'high',title:`RULA score ${rula} — investigate and change`,rec:'Redesign workstation to reduce combined upper limb loading.'});
+  if(reba>=8)hz.push({level:'high',title:`REBA score ${reba} — high full-body risk`,rec:'Implement engineering controls to reduce whole-body posture demands.'});
+  return hz;
+}
+
+function renderHazards(hz){
+  const el=document.getElementById('hazardList');
+  if(!hz.length){el.innerHTML='<div class="es">No hazards detected.</div>';return}
+  el.innerHTML=hz.map(h=>`<div class="hazard-item ${h.level==='high'?'high':''}"><div class="hz-title">${h.title}</div><div class="hz-rec">${h.rec}</div></div>`).join('');
+}
+
+/* ═══ UI UPDATE ═══ */
+function rc(v,t){return v<=t[0]?'rl':v<=t[1]?'rm':'rh'}
+function rcol(v,t){return v<=t[0]?'var(--gn)':v<=t[1]?'var(--yw)':'var(--rd)'}
+
+function updateUI(raw,skipSmooth){
+  const a=skipSmooth?raw:smAng(raw);
+  const p=detectPosture(a);
+  const ruC=rulaComp(a,p),reC=rebaComp(a,p);
+  const ru=compRULA(ruC),re=compREBA(reC);
+  latA=a;latS={rula:ru,reba:re,posture:p};
+  const f=v=>v.toFixed(1)+'\u00B0';
+  document.getElementById('jNk').textContent=f(a.neck);document.getElementById('jTr').textContent=f(a.trunk);
+  document.getElementById('jLS').textContent=f(a.lS);document.getElementById('jRS').textContent=f(a.rS);
+  document.getElementById('jLE').textContent=f(a.lE);document.getElementById('jRE').textContent=f(a.rE);
+  document.getElementById('jLK').textContent=f(a.lK);document.getElementById('jRK').textContent=f(a.rK);
+  document.getElementById('jLW').textContent=f(a.lW);document.getElementById('jRW').textContent=f(a.rW);
+  document.getElementById('pb').textContent=p==='seated'?'SEATED':'STANDING';document.getElementById('pb').classList.remove('h');
+  const re2=document.getElementById('rulaS');re2.textContent=ru;re2.className=rc(ru,[2,4]);
+  document.getElementById('rulaD').textContent=ru<=2?'Acceptable':ru<=4?'Investigate further':ru<=6?'Change soon':'Change immediately';
+  document.getElementById('rulaB').style.width=(ru/7*100)+'%';document.getElementById('rulaB').style.background=rcol(ru,[2,4]);
+  const be=document.getElementById('rebaS');be.textContent=re;be.className=rc(re,[3,7]);
+  document.getElementById('rebaD').textContent=re<=1?'Negligible':re<=3?'Low risk':re<=7?'Medium risk':re<=10?'High risk':'Very high risk';
+  document.getElementById('rebaB').style.width=(re/12*100)+'%';document.getElementById('rebaB').style.background=rcol(re,[3,7]);
+  document.getElementById('plbl').textContent=p;
+  calcNIOSH();
+  renderHazards(detectHazards(a,ru,re));
+  // Save to active station
+  const sid=document.getElementById('stationSelect').value;
+  if(sid){const st=stations.find(s=>s.id==sid);if(st){st.lastRula=ru;st.lastReba=re;st.lastAngles={...a};st.hazards=detectHazards(a,ru,re);debounceSave()}}
+  return{rula:ru,reba:re,posture:p};
+}
+
+function drawPose(lms,w,h){cv.width=w;cv.height=h;cx.clearRect(0,0,w,h);cv.style.width=w+'px';cv.style.height=h+'px';if(!lms||!lms.length)return;
+const du=new DrawingUtils(cx);const colors=['#1a1a1a','#1565c0','#2e7d32'];
+lms.forEach((lm,i)=>{du.drawConnectors(lm,PoseLandmarker.POSE_CONNECTIONS,{color:colors[i%3],lineWidth:2});du.drawLandmarks(lm,{color:'#c62828',lineWidth:1,radius:2})})}
+
+function ds(){const area=document.getElementById('ca'),sw=vid.style.display!=='none'?vid.videoWidth:uimg.naturalWidth,sh=vid.style.display!=='none'?vid.videoHeight:uimg.naturalHeight;if(!sw||!sh)return{dw:0,dh:0};const ar=sw/sh,aW=area.clientWidth,aH=area.clientHeight;let dw,dh;if(aW/aH>ar){dh=aH;dw=dh*ar}else{dw=aW;dh=dw/ar}return{dw,dh}}
+
+/* ═══ WEBCAM ═══ */
+async function predict(){if(!wcRun||!plm)return;const now=performance.now();if(now===lastTS){animId=requestAnimationFrame(predict);return}lastTS=now;
+const res=plm.detectForVideo(vid,now);const{dw,dh}=ds();drawPose(res.landmarks,dw,dh);
+const n=res.landmarks?.length||0;if(n>0){updateUI(rawAng(res.landmarks[0]));detectLift(rawAng(res.landmarks[0]));document.getElementById('lc').textContent=`${n} ${n>1?'people':'person'}`;document.getElementById('pcount').textContent=n>1?`${n} people detected`:'';document.getElementById('pcount').classList.toggle('h',n<=1)}
+animId=requestAnimationFrame(predict)}
+
+window.toggleWebcam=async function(){if(wcRun){if(isRec)window.toggleRec();wcRun=false;if(animId)cancelAnimationFrame(animId);vid.srcObject?.getTracks().forEach(t=>t.stop());vid.style.display='none';vid.controls=false;vid.removeAttribute('src');vid.srcObject=null;phEl.style.display='';vidLoaded=false;smoothed=null;
+document.getElementById('bW').classList.remove('on');setBL('bW','Webcam');document.getElementById('bSnap').disabled=true;document.getElementById('bRec').disabled=true;document.getElementById('bAna').disabled=true;document.getElementById('bScan').disabled=true;document.getElementById('bClassify').disabled=true;document.getElementById('bFlip').disabled=true;document.getElementById('pb').classList.add('h');document.getElementById('pcount').classList.add('h');ss('idle','Idle');return}
+try{await plm.setOptions({runningMode:"VIDEO"});const s=await navigator.mediaDevices.getUserMedia({video:{width:1280,height:720,facingMode:cameraFacing}});vid.srcObject=s;vid.controls=false;vid.removeAttribute('src');vid.style.display='block';uimg.style.display='none';phEl.style.display='none';
+document.getElementById('bW').classList.add('on');setBL('bW','Stop');document.getElementById('bSnap').disabled=false;document.getElementById('bRec').disabled=false;document.getElementById('bAna').disabled=true;document.getElementById('bScan').disabled=false;document.getElementById('bClassify').disabled=false;document.getElementById('bFlip').disabled=false;vidLoaded=false;smoothed=null;ss('active','Webcam active');
+vid.onloadeddata=()=>{wcRun=true;lastTS=-1;predict()}}catch(e){alert('Webcam error: '+e.message)}};
+
+/* ═══ FLIP CAMERA ═══ */
+window.flipCamera=async function(){
+  if(!wcRun)return;
+  cameraFacing=cameraFacing==='environment'?'user':'environment';
+  // Stop current stream and restart with new facing
+  wcRun=false;if(animId)cancelAnimationFrame(animId);
+  vid.srcObject?.getTracks().forEach(t=>t.stop());
+  try{
+    const s=await navigator.mediaDevices.getUserMedia({video:{width:1280,height:720,facingMode:cameraFacing}});
+    vid.srcObject=s;
+    vid.onloadeddata=()=>{wcRun=true;lastTS=-1;predict()};
+  }catch(e){
+    // If requested facing not available, flip back
+    cameraFacing=cameraFacing==='environment'?'user':'environment';
+  }
+};
+
+/* ═══ RECORDING ═══ */
+window.toggleRec=function(){if(!isRec){const s=vid.srcObject;if(!s)return;const r2=document.createElement('canvas');r2.width=vid.videoWidth;r2.height=vid.videoHeight;const rctx=r2.getContext('2d');
+recDI=setInterval(()=>{rctx.drawImage(vid,0,0,r2.width,r2.height);rctx.drawImage(cv,0,0,r2.width,r2.height)},33);
+const rs=r2.captureStream(30);s.getAudioTracks().forEach(t=>rs.addTrack(t));let mt='video/webm;codecs=vp9';if(!MediaRecorder.isTypeSupported(mt))mt='video/webm';
+mr=new MediaRecorder(rs,{mimeType:mt});recC=[];mr.ondataavailable=e=>{if(e.data.size>0)recC.push(e.data)};
+mr.onstop=()=>{clearInterval(recDI);const b=new Blob(recC,{type:'video/webm'}),u=URL.createObjectURL(b),d=Math.round((Date.now()-recSt)/1000);
+const rec={id:Date.now(),url:u,time:new Date().toLocaleTimeString(),duration:d,blob:b,station:document.getElementById('stationSelect').value};
+recs.push(rec);renderRecs();
+const sid=rec.station;if(sid){const st=stations.find(s=>s.id==sid);if(st){st.recordings=(st.recordings||0)+1;renderDash()}}};
+mr.start(100);isRec=true;recSt=Date.now();document.getElementById('ri').classList.remove('h');document.getElementById('bRec').classList.add('rd');setBL('bRec','Stop Rec');
+recTmr=setInterval(()=>{const e=Math.round((Date.now()-recSt)/1000);document.getElementById('rt').textContent=String(Math.floor(e/60)).padStart(2,'0')+':'+String(e%60).padStart(2,'0')},1000);
+}else{if(mr&&mr.state!=='inactive')mr.stop();isRec=false;document.getElementById('ri').classList.add('h');document.getElementById('bRec').classList.remove('rd');setBL('bRec','Record');clearInterval(recTmr)}};
+
+function renderRecs(){const l=document.getElementById('rl');if(!recs.length){l.innerHTML='<div class="es">No recordings yet.</div>';return}
+l.innerHTML=recs.map((r,i)=>{const m=String(Math.floor(r.duration/60)).padStart(2,'0'),s=String(r.duration%60).padStart(2,'0');return`<div class="mi"><div class="inf"><div class="il">Rec #${i+1}${r.station?' — '+stations.find(s=>s.id==r.station)?.name:''}</div><div class="is">${r.time} — ${m}:${s}</div></div><a onclick="dlR(${i})">Save</a><a onclick="playR(${i})">Play</a><a onclick="delR(${i})" style="color:var(--rd)">Del</a></div>`}).join('')}
+window.dlR=i=>{const a=document.createElement('a');a.href=recs[i].url;a.download=`antora-ergo-rec-${i+1}.webm`;a.click()};
+window.delR=i=>{if(!confirm('Delete this recording?'))return;recs.splice(i,1);renderRecs()};
+window.playR=i=>loadVid(recs[i].url);
+
+/* ═══ UPLOAD ═══ */
+window.handleUpload=async function(e){const f=e.target.files[0];if(!f)return;if(wcRun)window.toggleWebcam();const u=URL.createObjectURL(f);
+if(f.type.startsWith('video')||/\.(webm|mp4|mov)$/i.test(f.name))loadVid(u);
+else{uimg.src=u;uimg.style.display='block';vid.style.display='none';phEl.style.display='none';vidLoaded=false;smoothed=null;document.getElementById('bSnap').disabled=false;document.getElementById('bAna').disabled=true;document.getElementById('bScan').disabled=false;document.getElementById('bClassify').disabled=false;ss('active','Analyzing image');
+uimg.onload=async()=>{await plm.setOptions({runningMode:"IMAGE"});const r=plm.detect(uimg);const{dw,dh}=ds();drawPose(r.landmarks,dw,dh);
+if(r.landmarks?.length>0){updateUI(rawAng(r.landmarks[0]),true);document.getElementById('lc').textContent=`${r.landmarks.length} ${r.landmarks.length>1?'people':'person'}`;ss('active','Pose detected')}else ss('warn','No pose detected')}}e.target.value=''};
+
+function loadVid(u){if(wcRun)window.toggleWebcam();vid.srcObject=null;vid.src=u;vid.controls=true;vid.style.display='block';uimg.style.display='none';phEl.style.display='none';
+document.getElementById('bSnap').disabled=false;document.getElementById('bRec').disabled=true;vidLoaded=true;smoothed=null;document.getElementById('bAna').disabled=false;ss('active','Video loaded')}
+
+/* ═══ ANALYZE VIDEO ═══ */
+window.analyzeVideo=async function(){if(!vidLoaded||isAna)return;isAna=true;aData=[];smoothed=null;
+const badge=document.getElementById('ab');badge.classList.remove('h');document.getElementById('bAna').disabled=true;setBL('bAna','Analyzing...');ss('active','Analyzing video');
+await plm.setOptions({runningMode:"VIDEO"});vid.pause();vid.currentTime=0;const dur=vid.duration,step=0.25;let t=0;
+function seek(){return new Promise(res=>{if(t>dur){res(false);return}vid.currentTime=t;vid.onseeked=()=>{try{const r=plm.detectForVideo(vid,t*1000);
+if(r.landmarks?.length>0){const a=rawAng(r.landmarks[0]);const sa=smAng(a);const p=detectPosture(sa);const ruC=rulaComp(sa,p),reC=rebaComp(sa,p);const ru=compRULA(ruC),re=compREBA(reC);
+aData.push({time:t,rula:ru,reba:re,posture:p,...sa});updateUI(a);const{dw,dh}=ds();drawPose(r.landmarks,dw,dh)}}catch(e){}
+badge.textContent=`Analyzing ${Math.round(t/dur*100)}%`;t+=step;res(true)}})}
+let go=true;while(go)go=await seek();
+badge.classList.add('h');isAna=false;document.getElementById('bAna').disabled=false;setBL('bAna','Analyze Video');ss('active',`${aData.length} frames analyzed`);
+drawTimeline();drawSummary();document.getElementById('bEA').style.display='';
+// Save to station
+const sid=document.getElementById('stationSelect').value;
+if(sid){const st=stations.find(s=>s.id==sid);if(st){st.analysisData=aData;st.thaComplete=true;renderDash()}}};
+
+function drawTimeline(){const w2=document.getElementById('tw');w2.classList.add('show');document.getElementById('te').style.display='none';
+const c=document.getElementById('tc'),dpr=window.devicePixelRatio||1,w=w2.clientWidth-20;c.style.width=w+'px';c.style.height='80px';c.width=w*dpr;c.height=80*dpr;
+const x2=c.getContext('2d');x2.scale(dpr,dpr);x2.clearRect(0,0,w,80);if(!aData.length)return;
+const mxT=aData[aData.length-1].time||1;
+x2.fillStyle='rgba(46,125,50,0.08)';x2.fillRect(0,80*(1-2/7),w,80*(2/7));x2.fillStyle='rgba(230,168,23,0.08)';x2.fillRect(0,80*(1-4/7),w,80*(2/7));x2.fillStyle='rgba(198,40,40,0.06)';x2.fillRect(0,0,w,80*(1-4/7));
+x2.strokeStyle='#e8e8e8';x2.lineWidth=0.5;for(let y=0;y<80;y+=20){x2.beginPath();x2.moveTo(0,y);x2.lineTo(w,y);x2.stroke()}
+x2.beginPath();x2.strokeStyle='#1a1a1a';x2.lineWidth=1.5;aData.forEach((d,i)=>{const px=d.time/mxT*w,py=80*(1-d.rula/7);i?x2.lineTo(px,py):x2.moveTo(px,py)});x2.stroke();
+x2.beginPath();x2.strokeStyle='#c62828';x2.lineWidth=1.5;x2.setLineDash([4,3]);aData.forEach((d,i)=>{const px=d.time/mxT*w,py=80*(1-d.reba/12);i?x2.lineTo(px,py):x2.moveTo(px,py)});x2.stroke();x2.setLineDash([]);
+x2.fillStyle='#999';x2.font='9px JetBrains Mono';x2.fillText('0s',2,78);x2.fillText(mxT.toFixed(1)+'s',w-30,78)}
+
+function drawSummary(){const s=document.getElementById('asum');s.classList.add('show');if(!aData.length)return;
+const avg=k=>(aData.reduce((a,d)=>a+d[k],0)/aData.length).toFixed(1);const mx=k=>Math.max(...aData.map(d=>d[k]));
+const seated=aData.filter(d=>d.posture==='seated').length;const pct=Math.round(seated/aData.length*100);
+document.getElementById('sT').innerHTML=`<tr><td>Duration</td><td>${aData[aData.length-1].time.toFixed(1)}s (${aData.length} frames)</td></tr><tr><td>Posture</td><td>${pct}% seated / ${100-pct}% standing</td></tr><tr><td>Avg RULA</td><td class="${rc(+avg('rula'),[2,4])}">${avg('rula')}</td></tr><tr><td>Peak RULA</td><td class="${rc(mx('rula'),[2,4])}">${mx('rula')}</td></tr><tr><td>Avg REBA</td><td class="${rc(+avg('reba'),[3,7])}">${avg('reba')}</td></tr><tr><td>Peak REBA</td><td class="${rc(mx('reba'),[3,7])}">${mx('reba')}</td></tr><tr><td>Peak Trunk</td><td>${mx('trunk').toFixed(1)}\u00B0</td></tr><tr><td>Peak Neck</td><td>${mx('neck').toFixed(1)}\u00B0</td></tr>`}
+
+window.exportAnalysis=function(){if(!aData.length)return;let csv='Time_s,RULA,REBA,Posture,Neck,Trunk,L_Shoulder,R_Shoulder,L_Elbow,R_Elbow,L_Knee,R_Knee,L_Wrist,R_Wrist\n';
+aData.forEach(d=>{csv+=`${d.time.toFixed(2)},${d.rula},${d.reba},${d.posture},${d.neck.toFixed(1)},${d.trunk.toFixed(1)},${d.lS.toFixed(1)},${d.rS.toFixed(1)},${d.lE.toFixed(1)},${d.rE.toFixed(1)},${d.lK.toFixed(1)},${d.rK.toFixed(1)},${d.lW.toFixed(1)},${d.rW.toFixed(1)}\n`});
+dl(csv,'text/csv',`antora-ergo-analysis-${new Date().toISOString().slice(0,10)}.csv`)};
+
+/* ═══ SNAPSHOTS ═══ */
+window.snap=function(){if(!latS)return;
+const note=prompt('Add a note to this snapshot (optional):','');
+const tc=document.createElement('canvas');tc.width=160;tc.height=120;const tx=tc.getContext('2d');
+const src=vid.style.display!=='none'?vid:uimg;tx.drawImage(src,0,0,160,120);tx.drawImage(cv,0,0,160,120);
+const s={id:Date.now(),thumb:tc.toDataURL('image/jpeg',.7),time:new Date().toLocaleTimeString(),angles:{...latA},scores:{...latS},station:document.getElementById('stationSelect').value,note:note||''};
+snaps.push(s);document.getElementById('bExp').disabled=false;renderSnaps();
+const sid=s.station;if(sid){const st=stations.find(x=>x.id==sid);if(st){st.snapshots=(st.snapshots||0)+1;renderDash()}}};
+
+function renderSnaps(){const l=document.getElementById('sl');if(!snaps.length){l.innerHTML='<div class="es">No snapshots yet.</div>';document.getElementById('bExp').disabled=true;return}
+l.innerHTML=snaps.map((s,i)=>`<div class="mi"><img src="${s.thumb}"><div class="inf"><div class="il ${rc(s.scores.rula,[2,4])}">RULA ${s.scores.rula} / REBA ${s.scores.reba}</div><div class="is">#${i+1} — ${s.time}</div>${s.note?`<div style="font-size:9px;color:var(--tx2);margin-top:2px;font-style:italic">${s.note}</div>`:''}</div><a onclick="delSnap(${i})" style="color:var(--rd)">Del</a></div>`).join('')}
+
+window.delSnap=function(i){snaps.splice(i,1);renderSnaps()};
+
+window.exportSnaps=function(){if(!snaps.length)return;let csv='Snapshot,Time,RULA,REBA,Note,Neck,Trunk,L_Shoulder,R_Shoulder,L_Elbow,R_Elbow,L_Knee,R_Knee,L_Wrist,R_Wrist\n';
+snaps.forEach((s,i)=>{const a=s.angles;csv+=`${i+1},${s.time},${s.scores.rula},${s.scores.reba},"${(s.note||'').replace(/"/g,'""')}",${a.neck.toFixed(1)},${a.trunk.toFixed(1)},${a.lS.toFixed(1)},${a.rS.toFixed(1)},${a.lE.toFixed(1)},${a.rE.toFixed(1)},${a.lK.toFixed(1)},${a.rK.toFixed(1)},${a.lW.toFixed(1)},${a.rW.toFixed(1)}\n`});
+dl(csv,'text/csv',`antora-ergo-snapshots-${new Date().toISOString().slice(0,10)}.csv`)};
+
+/* ═══ STATIONS ═══ */
+window.openAddStation=()=>{editingStationId=null;document.getElementById('modalTitle').textContent='Add Production Station';document.getElementById('modalBg').classList.remove('h');document.getElementById('mName').value='';document.getElementById('mArea').value='';document.getElementById('mDesc').value=''};
+window.closeModal=()=>{editingStationId=null;document.getElementById('modalBg').classList.add('h')};
+window.saveStation=function(){const name=document.getElementById('mName').value.trim();if(!name)return;
+if(editingStationId){
+  const st=stations.find(s=>s.id==editingStationId);
+  if(st){st.name=name;st.area=document.getElementById('mArea').value.trim();st.desc=document.getElementById('mDesc').value.trim()}
+  editingStationId=null;
+}else{
+  stations.push({id:Date.now(),name,area:document.getElementById('mArea').value.trim(),desc:document.getElementById('mDesc').value.trim(),thaComplete:false,recordings:0,snapshots:0,lastRula:null,lastReba:null,hazards:[],analysisData:null,lastAngles:null,narrative:''});
+}
+closeModal();renderDash();updateStationSelects()};
+
+function renderDash(){
+  saveStations();
+  document.getElementById('kpiStations').textContent=stations.length;
+  document.getElementById('kpiComplete').textContent=stations.filter(s=>s.thaComplete).length;
+  document.getElementById('kpiHazards').textContent=stations.reduce((a,s)=>a+(s.hazards?.length||0),0);
+  const withRula=stations.filter(s=>s.lastRula!=null);
+  document.getElementById('kpiAvgRula').textContent=withRula.length?(withRula.reduce((a,s)=>a+s.lastRula,0)/withRula.length).toFixed(1):'—';
+  const grid=document.getElementById('stationGrid');
+  if(!stations.length){grid.innerHTML='<div class="es" style="grid-column:1/-1;padding:40px">No stations added yet. Click + Add Station to begin.</div>';return}
+  grid.innerHTML=stations.map(s=>{
+    const progress=s.thaComplete?100:(s.recordings||s.snapshots?50:0);
+    const tag=s.thaComplete?'<span class="tag tag-g">Complete</span>':s.recordings||s.snapshots?'<span class="tag tag-y">In Progress</span>':'<span class="tag tag-b">Not Started</span>';
+    return`<div class="station-card"><div style="display:flex;justify-content:space-between;align-items:start"><h4 style="cursor:pointer" onclick="goToStation('${s.id}')">${s.name}</h4><div style="display:flex;gap:4px;align-items:center">${tag}<button class="btn" style="padding:3px 6px;font-size:9px" onclick="event.stopPropagation();editStation('${s.id}')">Edit</button><button class="btn" style="padding:3px 6px;font-size:9px;color:var(--rd);border-color:var(--rd)" onclick="event.stopPropagation();deleteStation('${s.id}')">Delete</button></div></div><div class="meta" style="cursor:pointer" onclick="goToStation('${s.id}')">${s.area||'No area specified'}</div><div class="stats" style="cursor:pointer" onclick="goToStation('${s.id}')"><span>RULA: <strong class="${s.lastRula?rc(s.lastRula,[2,4]):''}">${s.lastRula||'—'}</strong></span><span>REBA: <strong class="${s.lastReba?rc(s.lastReba,[3,7]):''}">${s.lastReba||'—'}</strong></span><span>${s.hazards?.length||0} hazards</span></div><div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div></div>`
+  }).join('')}
+
+function updateStationSelects(){
+  const opts=stations.map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  document.getElementById('stationSelect').innerHTML='<option value="">— No Station —</option>'+opts;
+  document.getElementById('reportStation').innerHTML='<option value="">— Select Station —</option>'+opts;
+}
+
+window.goToStation=function(id){showView('capture');document.getElementById('stationSelect').value=id};
+
+let editingStationId=null;
+window.deleteStation=function(id){
+  const st=stations.find(s=>s.id==id);if(!st)return;
+  if(!confirm(`Delete station "${st.name}" and all its data?`))return;
+  stations=stations.filter(s=>s.id!=id);
+  snaps=snaps.filter(s=>s.station!=id);
+  recs=recs.filter(r=>r.station!=id);
+  renderDash();updateStationSelects();renderSnaps();renderRecs();
+};
+
+window.editStation=function(id){
+  const st=stations.find(s=>s.id==id);if(!st)return;
+  editingStationId=id;
+  document.getElementById('modalTitle').textContent='Edit Station';
+  document.getElementById('mName').value=st.name;
+  document.getElementById('mArea').value=st.area||'';
+  document.getElementById('mDesc').value=st.desc||'';
+  document.getElementById('modalBg').classList.remove('h');
+};
+
+/* ═══ REPORTS / THA ═══ */
+window.previewTHA=function(){
+  const sid=document.getElementById('reportStation').value;if(!sid){document.getElementById('thaPreview').innerHTML='';document.getElementById('reviewPanel').innerHTML='';return}
+  const st=stations.find(s=>s.id==sid);if(!st){return}
+  const a=st.lastAngles;const d=st.analysisData;const hz=st.hazards||[];
+  const date=new Date().toLocaleDateString();
+
+  let analysisRows='';
+  if(d&&d.length){
+    const avg=k=>(d.reduce((a,x)=>a+x[k],0)/d.length).toFixed(1);const mx=k=>Math.max(...d.map(x=>x[k])).toFixed(1);
+    analysisRows=`<tr><td>Avg RULA</td><td>${avg('rula')}</td><td>Peak RULA</td><td>${mx('rula')}</td></tr><tr><td>Avg REBA</td><td>${avg('reba')}</td><td>Peak REBA</td><td>${mx('reba')}</td></tr><tr><td>Peak Trunk</td><td>${mx('trunk')}°</td><td>Peak Neck</td><td>${mx('neck')}°</td></tr><tr><td>Frames</td><td>${d.length}</td><td>Duration</td><td>${d[d.length-1].time.toFixed(1)}s</td></tr>`;
+  }else if(a){
+    analysisRows=`<tr><td>RULA</td><td>${st.lastRula}</td><td>REBA</td><td>${st.lastReba}</td></tr><tr><td>Neck</td><td>${a.neck.toFixed(1)}°</td><td>Trunk</td><td>${a.trunk.toFixed(1)}°</td></tr>`;
+  }else{analysisRows='<tr><td colspan="4">No analysis data captured yet.</td></tr>'}
+
+  const hazardRows=hz.length?hz.map(h=>`<tr><td>${h.level==='high'?'HIGH':'MEDIUM'}</td><td>${h.title}</td><td>${h.rec}</td></tr>`).join(''):'<tr><td colspan="3">No hazards identified.</td></tr>';
+
+  // Vision findings
+  const vf=st.visionFindings||[];
+  const visionRows=vf.length?vf.map(f=>`<tr><td>${f.severity.toUpperCase()}</td><td>${f.category}</td><td>${f.finding}</td><td>${f.recommendation}</td></tr>`).join(''):'';
+  const visionTable=vf.length?`<h3 style="font-size:12px;margin:12px 0 6px">AI Vision — Environmental Findings <span class="ai-badge">AI</span></h3>
+  <table><thead><tr><th>Severity</th><th>Category</th><th>Finding</th><th>Recommendation</th></tr></thead><tbody>${visionRows}</tbody></table>`:'';
+
+  // Lift events
+  const le=st.liftEvents||[];
+  const liftRows=le.length?le.map((e,i)=>`<tr><td>${i+1}</td><td>${e.time}</td><td>${e.startTrunk}° → ${e.endTrunk}°</td><td>H=${e.H}" V=${e.V_start}→${e.V_end}" D=${e.D}"</td></tr>`).join(''):'';
+  const liftTable=le.length?`<h3 style="font-size:12px;margin:12px 0 6px">Detected Lift Events (${le.length})</h3>
+  <table><thead><tr><th>#</th><th>Time</th><th>Trunk Angle</th><th>NIOSH Parameters</th></tr></thead><tbody>${liftRows}</tbody></table>`:'';
+
+  // Task classification
+  const tc2=st.taskClassification;
+  const taskInfo=tc2?`<h3 style="font-size:12px;margin:12px 0 6px">AI Task Classification <span class="ai-badge">AI</span></h3>
+  <table><tbody><tr><td>Task</td><td colspan="3">${tc2.task_name||'—'}</td></tr><tr><td>Description</td><td colspan="3">${tc2.task_description||'—'}</td></tr><tr><td>Movements</td><td>${tc2.movements?.join(', ')||'—'}</td><td>Tools</td><td>${tc2.tools?.join(', ')||'—'}</td></tr><tr><td>Lifting</td><td>${tc2.involves_lifting?'Yes':'No'}</td><td>Risk Factors</td><td>${tc2.risk_factors?.join(', ')||'—'}</td></tr></tbody></table>`:'';
+
+  const niosh=window._niosh?`<tr><td>Load</td><td>${window._niosh.load} lbs</td><td>RWL</td><td>${window._niosh.RWL.toFixed(1)} lbs</td></tr><tr><td>Lifting Index</td><td colspan="3">${window._niosh.LI.toFixed(2)} — ${window._niosh.LI<=1?'Acceptable':window._niosh.LI<=2?'Increased Risk':'High Risk'}</td></tr>`:'<tr><td colspan="4">No lifting data.</td></tr>';
+
+  document.getElementById('thaPreview').innerHTML=`<div class="tha-preview" id="thaPrint">
+  <h2>Task Hazard Analysis — ${st.name}</h2>
+  <div class="tha-meta">Area: ${st.area||'—'} &nbsp;|&nbsp; Date: ${date} &nbsp;|&nbsp; Assessor: EMBER</div>
+  <p style="font-size:11px;margin-bottom:12px"><strong>Task Description:</strong> ${st.desc||'No description provided.'}</p>
+  <h3 style="font-size:12px;margin:12px 0 6px">Ergonomic Assessment</h3>
+  <table><thead><tr><th>Metric</th><th>Value</th><th>Metric</th><th>Value</th></tr></thead><tbody>${analysisRows}</tbody></table>
+  <h3 style="font-size:12px;margin:12px 0 6px">NIOSH Lifting Equation</h3>
+  <table><thead><tr><th>Parameter</th><th>Value</th><th>Parameter</th><th>Value</th></tr></thead><tbody>${niosh}</tbody></table>
+  <h3 style="font-size:12px;margin:12px 0 6px">Identified Hazards &amp; Recommendations</h3>
+  <table><thead><tr><th>Severity</th><th>Hazard</th><th>Recommendation</th></tr></thead><tbody>${hazardRows}</tbody></table>
+  ${taskInfo}
+  ${visionTable}
+  ${liftTable}
+  ${st.narrative?`<h3 style="font-size:12px;margin:12px 0 6px">AI Assessment Narrative <span class="ai-badge">AI</span></h3><div class="narrative-box">${st.narrative}</div>`:''}
+  ${st.review?.status?`<h3 style="font-size:12px;margin:12px 0 6px">Supervisor Review</h3>
+  <table><tbody>
+  <tr><td>Reviewer</td><td>${st.review.reviewer||'—'}</td><td>Date</td><td>${st.review.date||'—'}</td></tr>
+  <tr><td>Status</td><td colspan="3"><strong>${st.review.status.toUpperCase()}</strong></td></tr>
+  ${st.review.rula?`<tr><td>Manual RULA</td><td>${st.review.rula}</td><td>Manual REBA</td><td>${st.review.reba||'—'}</td></tr>`:''}
+  ${st.review.risk?`<tr><td>Risk Level</td><td colspan="3">${st.review.risk.toUpperCase()}</td></tr>`:''}
+  ${st.review.comments?`<tr><td>Comments</td><td colspan="3">${st.review.comments}</td></tr>`:''}
+  </tbody></table>`:''}
+  </div>`;
+  renderReview(sid);
+};
+
+/* ═══ SUPERVISOR REVIEW ═══ */
+function renderReview(sid){
+  const el=document.getElementById('reviewPanel');
+  if(!sid){el.innerHTML='';return}
+  const st=stations.find(s=>s.id==sid);
+  if(!st||(!st.lastRula&&!st.analysisData)){el.innerHTML='';return}
+
+  const rev=st.review||{};
+  const hasVideo=st.analysisData?.length>0;
+
+  el.innerHTML=`<div class="review-panel">
+    <h3>Supervisor Review ${st.review?.status?`<span class="review-status" style="background:${rev.status==='approved'?'#e8f5e9;color:var(--gn)':rev.status==='rejected'?'#ffebee;color:var(--rd)':'#fff8e1;color:#b8860b'}">${rev.status.toUpperCase()}</span>`:''}</h3>
+    ${hasVideo?`<div style="margin-bottom:12px"><video src="${document.getElementById('reportVid').src||''}" controls style="width:100%;max-height:300px;border-radius:var(--r);background:#000"></video></div>`:''}
+    <div class="review-grid">
+      <div class="review-col">
+        <h4>AI Assessment</h4>
+        <div class="review-score"><label>RULA</label><span class="ai-val ${rc(st.lastRula||0,[2,4])}">${st.lastRula||'—'}</span></div>
+        <div class="review-score"><label>REBA</label><span class="ai-val ${rc(st.lastReba||0,[3,7])}">${st.lastReba||'—'}</span></div>
+        <div class="review-score"><label>Hazards</label><span class="ai-val">${st.hazards?.length||0}</span></div>
+        ${st.analysisData?`<div class="review-score"><label>Frames</label><span class="ai-val">${st.analysisData.length}</span></div>`:''}
+        ${st.taskClassification?`<div style="margin-top:8px;font-size:10px"><strong>Task:</strong> ${st.taskClassification.task_name||'—'}</div>`:''}
+      </div>
+      <div class="review-col">
+        <h4>Manual Assessment</h4>
+        <div class="review-score"><label>RULA</label><input type="number" id="revRula" min="1" max="7" value="${rev.rula||''}" placeholder="1-7"></div>
+        <div class="review-score"><label>REBA</label><input type="number" id="revReba" min="1" max="12" value="${rev.reba||''}" placeholder="1-12"></div>
+        <div class="review-score"><label>Risk Level</label><select id="revRisk" style="width:120px;padding:4px 6px;font-size:11px">
+          <option value="">—</option>
+          <option value="low" ${rev.risk==='low'?'selected':''}>Low</option>
+          <option value="medium" ${rev.risk==='medium'?'selected':''}>Medium</option>
+          <option value="high" ${rev.risk==='high'?'selected':''}>High</option>
+          <option value="critical" ${rev.risk==='critical'?'selected':''}>Critical</option>
+        </select></div>
+      </div>
+    </div>
+    <div class="review-comments">
+      <label style="font-size:10px;font-weight:700;color:var(--tx2)">Reviewer Comments</label>
+      <textarea id="revComments" placeholder="Additional observations, disagreements with AI assessment, recommended actions...">${rev.comments||''}</textarea>
+    </div>
+    <div class="review-actions">
+      <button class="btn btn-primary" onclick="saveReview('${sid}','approved')" style="background:var(--gn);border-color:var(--gn)">Approve THA</button>
+      <button class="btn" onclick="saveReview('${sid}','needs_revision')" style="border-color:var(--yw);color:var(--yw)">Request Revision</button>
+      <button class="btn" onclick="saveReview('${sid}','rejected')" style="border-color:var(--rd);color:var(--rd)">Reject</button>
+      <button class="btn" onclick="saveReview('${sid}','draft')">Save Draft</button>
+    </div>
+  </div>`;
+}
+
+window.saveReview=function(sid,status){
+  const st=stations.find(s=>s.id==sid);if(!st)return;
+  st.review={
+    rula:parseInt(document.getElementById('revRula').value)||null,
+    reba:parseInt(document.getElementById('revReba').value)||null,
+    risk:document.getElementById('revRisk').value||null,
+    comments:document.getElementById('revComments').value||'',
+    status:status,
+    reviewer:getSession()?.name||'Unknown',
+    date:new Date().toLocaleDateString()
+  };
+  renderReview(sid);
+  renderDash();
+};
+
+/* ═══ LLM NARRATIVE ═══ */
+window.generateNarrative=async function(){
+  const sid=document.getElementById('reportStation').value;if(!sid){alert('Select a station first.');return}
+  const st=stations.find(s=>s.id==sid);if(!st){return}
+
+  const prompt=`You are an occupational ergonomics expert writing a Task Hazard Analysis narrative for a manufacturing workstation at Antora Energy's Zanker production facility.
+
+Station: ${st.name}
+Area: ${st.area||'N/A'}
+Task: ${st.desc||'N/A'}
+${st.taskClassification?`AI Task Classification: ${st.taskClassification.task_name} — ${st.taskClassification.task_description}\nMovements: ${st.taskClassification.movements?.join(', ')||'N/A'}\nTools: ${st.taskClassification.tools?.join(', ')||'N/A'}\nInvolves Lifting: ${st.taskClassification.involves_lifting?'Yes':'No'}\nRisk Factors: ${st.taskClassification.risk_factors?.join(', ')||'N/A'}`:''}
+
+RULA Score: ${st.lastRula||'N/A'}
+REBA Score: ${st.lastReba||'N/A'}
+NIOSH Lifting Index: ${window._niosh?window._niosh.LI.toFixed(2):'N/A'}
+${window._niosh?`NIOSH Details: Load=${window._niosh.load}lbs, RWL=${window._niosh.RWL.toFixed(1)}lbs, H=${window._niosh.H.toFixed(0)}", V=${window._niosh.V.toFixed(0)}", D=${window._niosh.D.toFixed(0)}", A=${window._niosh.A.toFixed(0)}°`:''}
+Posture: ${st.lastAngles?detectPosture(st.lastAngles):'N/A'}
+Key Angles: ${st.lastAngles?`Neck ${st.lastAngles.neck.toFixed(0)}°, Trunk ${st.lastAngles.trunk.toFixed(0)}°, Max Shoulder ${Math.max(st.lastAngles.lS,st.lastAngles.rS).toFixed(0)}°, Max Wrist Dev ${Math.max(st.lastAngles.lW,st.lastAngles.rW).toFixed(0)}°`:'N/A'}
+Posture Hazards: ${st.hazards?.map(h=>`[${h.level.toUpperCase()}] ${h.title}`).join('; ')||'None'}
+${st.visionFindings?.length?`AI Vision Findings: ${st.visionFindings.map(f=>`[${f.severity.toUpperCase()}/${f.category}] ${f.finding}`).join('; ')}`:''}
+${st.liftEvents?.length?`Lift Events Detected: ${st.liftEvents.length} lifts recorded. Sample: Trunk flexion ${st.liftEvents[0].startTrunk}°→${st.liftEvents[0].endTrunk}°, H=${st.liftEvents[0].H}", D=${st.liftEvents[0].D}"`:''}
+${st.analysisData?.length?`Video Analysis: ${st.analysisData.length} frames over ${st.analysisData[st.analysisData.length-1].time.toFixed(1)}s. Avg RULA=${(st.analysisData.reduce((a,d)=>a+d.rula,0)/st.analysisData.length).toFixed(1)}, Peak RULA=${Math.max(...st.analysisData.map(d=>d.rula))}, Avg REBA=${(st.analysisData.reduce((a,d)=>a+d.reba,0)/st.analysisData.length).toFixed(1)}, Peak REBA=${Math.max(...st.analysisData.map(d=>d.reba))}`:''}
+
+Write a comprehensive, professional THA narrative (4-5 paragraphs) covering:
+1. Task overview — what the worker does, body mechanics observed, posture classification
+2. Quantitative risk assessment — interpret RULA, REBA, and NIOSH scores with their action levels
+3. Specific hazards — both posture-based and environmental (from AI vision if available), with ergonomic significance
+4. Lifting analysis — NIOSH findings and lift event patterns if applicable
+5. Prioritized corrective actions — engineering controls first, then administrative, then PPE. Be specific to this station.
+
+Use clear, professional language suitable for an EHS/safety report at a thermal energy storage manufacturing facility.`;
+
+  // Show loading
+  const prevHTML=document.getElementById('thaPreview').innerHTML;
+  document.getElementById('thaPreview').innerHTML+=`<div class="narrative-loading" id="narLoading"><div class="spinner" style="margin:0 auto"></div><p style="margin-top:8px">Generating AI assessment narrative...</p></div>`;
+
+  try{
+    const data=await callClaude([{role:"user",content:prompt}],1000);
+    if(!data){document.getElementById('narLoading')?.remove();return}
+    const text=data.content?.map(b=>b.text||'').join('\n')||'Could not generate narrative.';
+    st.narrative=text;
+    saveStations();
+    previewTHA(); // re-render with narrative
+  }catch(e){
+    document.getElementById('narLoading')?.remove();
+    alert('Error generating narrative: '+e.message);
+  }
+};
+
+/* ═══ EXPORT THA ═══ */
+window.exportTHA_PDF=function(){
+  const el=document.getElementById('thaPrint');if(!el){alert('Preview a station THA first.');return}
+  const w=window.open('','_blank');
+  w.document.write(`<html><head><title>THA Report</title><style>body{font-family:Arial,sans-serif;padding:40px;font-size:12px;color:#1a1a1a}h2{font-size:18px;margin-bottom:4px}h3{font-size:13px;margin:16px 0 6px;border-bottom:1px solid #ddd;padding-bottom:4px}table{width:100%;border-collapse:collapse;margin-bottom:12px}th,td{border:1px solid #ccc;padding:6px 8px;text-align:left}th{background:#f0f0f0;font-size:10px;text-transform:uppercase}.tha-meta{font-size:10px;color:#666;margin-bottom:12px}.narrative-box{background:#f5f5f5;padding:14px;border-radius:4px;line-height:1.6;white-space:pre-wrap}@media print{body{padding:20px}}</style></head><body>${el.innerHTML}<script>setTimeout(()=>window.print(),300)<\/script></body></html>`);
+  w.document.close();
+};
+
+window.exportTHA_Excel=function(){
+  const sid=document.getElementById('reportStation').value;
+  const st=stations.find(s=>s.id==sid);if(!st){alert('Select a station first.');return}
+
+  const wb=XLSX.utils.book_new();
+  // Summary sheet
+  const sumData=[['Task Hazard Analysis Report'],['Station',st.name],['Area',st.area||''],['Date',new Date().toLocaleDateString()],['Task',st.desc||''],[''],['RULA Score',st.lastRula||''],['REBA Score',st.lastReba||''],['NIOSH LI',window._niosh?window._niosh.LI.toFixed(2):'']];
+  const ws1=XLSX.utils.aoa_to_sheet(sumData);
+  XLSX.utils.book_append_sheet(wb,ws1,'Summary');
+
+  // Hazards sheet
+  const hzData=[['Severity','Hazard','Recommendation'],...(st.hazards||[]).map(h=>[h.level.toUpperCase(),h.title,h.rec])];
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(hzData),'Hazards');
+
+  // Vision findings sheet
+  if(st.visionFindings?.length){
+    const vfData=[['Severity','Category','Finding','Recommendation'],...st.visionFindings.map(f=>[f.severity.toUpperCase(),f.category,f.finding,f.recommendation])];
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(vfData),'Vision Findings');
+  }
+
+  // Lift events sheet
+  if(st.liftEvents?.length){
+    const leData=[['#','Time','Start Trunk°','End Trunk°','H (in)','V Start (in)','V End (in)','D (in)','A°'],...st.liftEvents.map((e,i)=>[i+1,e.time,e.startTrunk,e.endTrunk,e.H,e.V_start,e.V_end,e.D,e.A])];
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(leData),'Lift Events');
+  }
+
+  // Task classification sheet
+  if(st.taskClassification){
+    const tc3=st.taskClassification;
+    const tcData=[['Task Classification (AI)'],['Task Name',tc3.task_name||''],['Description',tc3.task_description||''],['Movements',(tc3.movements||[]).join(', ')],['Tools',(tc3.tools||[]).join(', ')],['Involves Lifting',tc3.involves_lifting?'Yes':'No'],['Risk Factors',(tc3.risk_factors||[]).join(', ')]];
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(tcData),'Task Classification');
+  }
+
+  // Analysis data sheet
+  if(st.analysisData?.length){
+    const aHead=['Time_s','RULA','REBA','Posture','Neck','Trunk','L_Shoulder','R_Shoulder','L_Elbow','R_Elbow','L_Knee','R_Knee','L_Wrist','R_Wrist'];
+    const aRows=st.analysisData.map(d=>[d.time.toFixed(2),d.rula,d.reba,d.posture,d.neck.toFixed(1),d.trunk.toFixed(1),d.lS.toFixed(1),d.rS.toFixed(1),d.lE.toFixed(1),d.rE.toFixed(1),d.lK.toFixed(1),d.rK.toFixed(1),d.lW.toFixed(1),d.rW.toFixed(1)]);
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([aHead,...aRows]),'Frame Analysis');
+  }
+
+  // Narrative
+  if(st.narrative){XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([['AI Assessment Narrative'],[st.narrative]]),'Narrative')}
+
+  // Review sheet
+  if(st.review){
+    const revData=[['Supervisor Review'],['Reviewer',st.review.reviewer||''],['Date',st.review.date||''],['Status',st.review.status||''],['Manual RULA',st.review.rula||''],['Manual REBA',st.review.reba||''],['Risk Level',st.review.risk||''],['Comments',st.review.comments||'']];
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(revData),'Supervisor Review');
+  }
+
+  XLSX.writeFile(wb,`THA-${st.name.replace(/\s+/g,'-')}-${new Date().toISOString().slice(0,10)}.xlsx`);
+};
+
+/* ═══ REPORT VIDEO ANALYSIS ═══ */
+window.analyzeForReport=async function(e){
+  const f=e.target.files[0];if(!f)return;e.target.value='';
+  const sid=document.getElementById('reportStation').value;
+  if(!sid){alert('Select a station first, then upload a video.');return}
+  const st=stations.find(s=>s.id==sid);if(!st)return;
+
+  const rv=document.getElementById('reportVid');
+  rv.src=URL.createObjectURL(f);
+
+  // Show progress in THA preview area
+  document.getElementById('thaPreview').innerHTML='<div style="text-align:center;padding:40px"><div class="spinner" style="margin:0 auto"></div><p style="margin-top:12px;font-size:12px;color:var(--tx2)" id="reportProgress">Loading video...</p><div class="progress-bar" style="margin-top:12px;max-width:400px;margin-left:auto;margin-right:auto;height:6px"><div class="progress-fill" id="reportBar" style="width:0"></div></div></div>';
+
+  // Wait for video metadata
+  await new Promise(res=>{
+    if(rv.readyState>=1)return res();
+    rv.onloadedmetadata=res;rv.load();
+  });
+
+  await plm.setOptions({runningMode:"VIDEO"});
+  const dur=rv.duration;const step=0.25;let t=0;
+  let data=[];smoothed=null;
+
+  document.getElementById('reportProgress').textContent=`Analyzing ${dur.toFixed(1)}s of video...`;
+
+  function seek(){return new Promise(res=>{
+    if(t>dur){res(false);return}
+    rv.currentTime=t;
+    rv.onseeked=()=>{
+      try{
+        const r=plm.detectForVideo(rv,t*1000);
+        if(r.landmarks?.length>0){
+          const a=rawAng(r.landmarks[0]);
+          const sa=smAng(a);
+          const p=detectPosture(sa);
+          const ruC=rulaComp(sa,p),reC=rebaComp(sa,p);
+          const ru=compRULA(ruC),re=compREBA(reC);
+          data.push({time:t,rula:ru,reba:re,posture:p,...sa});
+        }
+      }catch(e){}
+      const pct=Math.round(t/dur*100);
+      document.getElementById('reportProgress').textContent=`Analyzing video... ${pct}%`;
+      document.getElementById('reportBar').style.width=pct+'%';
+      t+=step;res(true);
+    };
+  })}
+
+  let go=true;while(go)go=await seek();
+
+  // Save to station
+  st.analysisData=data;
+  st.thaComplete=true;
+  if(data.length>0){
+    st.lastRula=Math.round(data.reduce((a,d)=>a+d.rula,0)/data.length);
+    st.lastReba=Math.round(data.reduce((a,d)=>a+d.reba,0)/data.length);
+    const finalAngles=data[data.length-1];
+    st.lastAngles={neck:finalAngles.neck,trunk:finalAngles.trunk,lS:finalAngles.lS,rS:finalAngles.rS,lE:finalAngles.lE,rE:finalAngles.rE,lK:finalAngles.lK,rK:finalAngles.rK,lW:finalAngles.lW,rW:finalAngles.rW};
+    st.hazards=detectHazards(st.lastAngles,st.lastRula,st.lastReba);
+  }
+
+  renderDash();
+  previewTHA(); // re-render with full data
+};
+
+/* ═══ NAV ═══ */
+window.showView=function(id){document.querySelectorAll('.view').forEach(v=>v.classList.remove('on'));document.getElementById('v-'+id).classList.add('on');document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('on'));
+document.querySelectorAll('.nav button').forEach(b=>{if(b.textContent.toLowerCase()===id)b.classList.add('on')});
+if(id==='dashboard')renderDash();if(id==='reports')updateStationSelects()};
+
+/* ═══ FRAME CAPTURE UTIL ═══ */
+function captureFrame(){
+  const src=vid.style.display!=='none'?vid:uimg;
+  const fc=document.createElement('canvas');
+  const sw=src.videoWidth||src.naturalWidth||640;
+  const sh=src.videoHeight||src.naturalHeight||480;
+  // Resize to max 800px for API efficiency
+  const scale=Math.min(1,800/Math.max(sw,sh));
+  fc.width=sw*scale;fc.height=sh*scale;
+  const fctx=fc.getContext('2d');
+  fctx.drawImage(src,0,0,fc.width,fc.height);
+  // Also draw pose overlay
+  fctx.drawImage(cv,0,0,fc.width,fc.height);
+  return fc.toDataURL('image/jpeg',0.8).split(',')[1];
+}
+
+function captureFrameClean(){
+  const src=vid.style.display!=='none'?vid:uimg;
+  const fc=document.createElement('canvas');
+  const sw=src.videoWidth||src.naturalWidth||640;
+  const sh=src.videoHeight||src.naturalHeight||480;
+  const scale=Math.min(1,800/Math.max(sw,sh));
+  fc.width=sw*scale;fc.height=sh*scale;
+  fc.getContext('2d').drawImage(src,0,0,fc.width,fc.height);
+  return fc.toDataURL('image/jpeg',0.8).split(',')[1];
+}
+
+/* ═══ AI VISION SCAN ═══ */
+let visionFindings=[];
+window.aiScan=async function(){
+  const b64=captureFrameClean();
+  document.getElementById('bScan').disabled=true;setBL('bScan','Scanning...');
+  document.getElementById('visionFindings').innerHTML='<div class="narrative-loading"><div class="spinner" style="margin:0 auto;width:20px;height:20px"></div><p style="margin-top:6px;font-size:10px">AI analyzing workspace...</p></div>';
+
+  const sid=document.getElementById('stationSelect').value;
+  const stName=sid?stations.find(s=>s.id==sid)?.name:'Unknown station';
+
+  try{
+    const data=await callClaude([{role:"user",content:[
+        {type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}},
+        {type:"text",text:`You are an occupational safety and ergonomics expert conducting a workplace hazard assessment at a manufacturing facility (station: ${stName}).
+
+Analyze this image and identify:
+1. ENVIRONMENTAL HAZARDS — clutter, trip hazards, obstructions, poor housekeeping, lighting issues
+2. PPE COMPLIANCE — missing hard hat, safety glasses, gloves, steel-toe boots, hearing protection
+3. TOOL/EQUIPMENT RISKS — improper tool use, damaged equipment, missing guards, pinch points
+4. WORKSTATION DESIGN — work height issues, excessive reach distances, poor material placement
+5. BODY MECHANICS — observable posture concerns beyond what pose tracking captures
+
+Respond in valid JSON only, no markdown. Format:
+{"findings":[{"category":"CATEGORY","severity":"high|medium|low","finding":"what you see","recommendation":"specific fix"}]}
+
+Only include findings you can actually observe. If the image is unclear or you can't identify hazards, return {"findings":[]}.`}
+      ]}],800);
+    if(!data){document.getElementById('visionFindings').innerHTML='<div class="es">Set API key first.</div>';document.getElementById('bScan').disabled=false;setBL('bScan','AI Scan');return}
+    const text=data.content?.map(b=>b.text||'').join('')||'{}';
+    const clean=text.replace(/```json|```/g,'').trim();
+    const parsed=JSON.parse(clean);
+    visionFindings=parsed.findings||[];
+
+    // Save to station
+    if(sid){const st=stations.find(s=>s.id==sid);if(st){st.visionFindings=visionFindings;saveStations()}}
+
+    renderVisionFindings();
+  }catch(e){
+    document.getElementById('visionFindings').innerHTML=`<div class="es">Error: ${e.message}</div>`;
+  }
+  document.getElementById('bScan').disabled=false;setBL('bScan','AI Scan');
+};
+
+function renderVisionFindings(){
+  const el=document.getElementById('visionFindings');
+  if(!visionFindings.length){el.innerHTML='<div class="es">No hazards identified by AI vision.</div>';return}
+  el.innerHTML=visionFindings.map(f=>`<div class="vision-item" style="border-left-color:${f.severity==='high'?'var(--rd)':f.severity==='medium'?'var(--yw)':'var(--gn)'}">
+    <div class="vi-title">${f.category} <span class="tag ${f.severity==='high'?'tag-r':f.severity==='medium'?'tag-y':'tag-g'}">${f.severity}</span></div>
+    <div>${f.finding}</div>
+    <div style="color:var(--tx2);font-size:9px;margin-top:3px">${f.recommendation}</div>
+  </div>`).join('');
+}
+
+/* ═══ AI TASK CLASSIFICATION ═══ */
+window.classifyTask=async function(){
+  const b64=captureFrameClean();
+  document.getElementById('bClassify').disabled=true;setBL('bClassify','Classifying...');
+
+  try{
+    const data=await callClaude([{role:"user",content:[
+        {type:"image",source:{type:"base64",media_type:"image/jpeg",data:b64}},
+        {type:"text",text:`You are an industrial ergonomics expert observing a manufacturing task.
+
+Analyze this image and identify:
+1. What task is being performed
+2. The primary body movements involved
+3. Tools or equipment being used
+4. Whether this involves manual material handling (lifting, carrying, pushing, pulling)
+5. Estimated task cycle time if repetitive
+
+Respond in valid JSON only, no markdown:
+{"task_name":"brief name","task_description":"2-3 sentence description","movements":["list","of","movements"],"tools":["list"],"involves_lifting":true/false,"estimated_cycle":"e.g. 30 seconds","risk_factors":["list of ergonomic risk factors observed"]}`}
+      ]}],400);
+    if(!data){document.getElementById('bClassify').disabled=false;setBL('bClassify','Classify Task');return}
+    const text=data.content?.map(b=>b.text||'').join('')||'{}';
+    const clean=text.replace(/```json|```/g,'').trim();
+    const parsed=JSON.parse(clean);
+
+    // Auto-fill station description if a station is selected
+    const sid=document.getElementById('stationSelect').value;
+    if(sid){
+      const st=stations.find(s=>s.id==sid);
+      if(st){
+        st.taskClassification=parsed;
+        if(!st.desc||st.desc.length<10)st.desc=parsed.task_description||'';
+        saveStations();
+      }
+    }
+
+    // Show in vision findings
+    const el=document.getElementById('visionFindings');
+    const taskHTML=`<div class="vision-item" style="border-left-color:var(--bl)">
+      <div class="vi-title">Task Identified <span class="ai-badge">AI</span></div>
+      <div><strong>${parsed.task_name||'Unknown'}</strong></div>
+      <div style="margin-top:3px">${parsed.task_description||''}</div>
+      ${parsed.movements?.length?`<div style="margin-top:3px;font-size:9px;color:var(--tx2)">Movements: ${parsed.movements.join(', ')}</div>`:''}
+      ${parsed.tools?.length?`<div style="font-size:9px;color:var(--tx2)">Tools: ${parsed.tools.join(', ')}</div>`:''}
+      ${parsed.involves_lifting?'<div style="margin-top:3px"><span class="tag tag-y">LIFTING TASK</span></div>':''}
+      ${parsed.risk_factors?.length?`<div style="margin-top:3px;font-size:9px;color:var(--tx2)">Risk factors: ${parsed.risk_factors.join(', ')}</div>`:''}
+    </div>`;
+    el.innerHTML=taskHTML+el.innerHTML;
+
+    ss('active','Task classified: '+parsed.task_name);
+  }catch(e){
+    ss('warn','Classification error: '+e.message);
+  }
+  document.getElementById('bClassify').disabled=false;setBL('bClassify','Classify Task');
+};
+
+/* ═══ LIFT DETECTION ═══ */
+let liftHistory=[];
+let liftEvents=[];
+let prevWristY=null;
+let liftState='idle'; // idle, lifting, lowering
+let liftStartAngles=null;
+let liftStartTime=0;
+
+function detectLift(a,timestamp){
+  const wristY=(a.wristY); // normalized 0-1, lower = higher on screen
+  if(prevWristY===null){prevWristY=wristY;return}
+
+  const dy=prevWristY-wristY; // positive = wrists moving up
+  const trunkFlexed=a.trunk>15;
+
+  if(liftState==='idle'&&dy>0.015&&trunkFlexed){
+    // Lift starting
+    liftState='lifting';
+    liftStartAngles={...a};
+    liftStartTime=timestamp||Date.now();
+  }else if(liftState==='lifting'&&(dy<-0.005||!trunkFlexed)){
+    // Lift completed
+    liftState='idle';
+    const endAngles={...a};
+
+    // Calculate NIOSH parameters from the lift
+    const startV=Math.abs(liftStartAngles.ankleY-liftStartAngles.wristY)*65;
+    const endV=Math.abs(endAngles.ankleY-endAngles.wristY)*65;
+    const D=Math.abs(endV-startV);
+    const H=Math.abs(liftStartAngles.wristX-liftStartAngles.ankleX)*60+10;
+    const A=Math.abs(liftStartAngles.lS-liftStartAngles.rS)*0.5;
+
+    if(D>3){ // Only count significant lifts
+      const evt={
+        id:Date.now(),
+        time:new Date().toLocaleTimeString(),
+        startTrunk:liftStartAngles.trunk.toFixed(0),
+        endTrunk:endAngles.trunk.toFixed(0),
+        H:H.toFixed(0),V_start:startV.toFixed(0),V_end:endV.toFixed(0),D:D.toFixed(0),A:A.toFixed(0)
+      };
+      liftEvents.push(evt);
+      renderLiftEvents();
+
+      // Auto-update NIOSH if inputs are set
+      // Update estimated H and D in the NIOSH calc
+      if(D>5){
+        // Could auto-trigger NIOSH recalc here
+      }
+
+      // Save to station
+      const sid=document.getElementById('stationSelect').value;
+      if(sid){const st=stations.find(s=>s.id==sid);if(st){st.liftEvents=liftEvents}}
+    }
+  }
+
+  prevWristY=wristY;
+}
+
+function renderLiftEvents(){
+  const el=document.getElementById('liftList');
+  document.getElementById('liftCount').textContent=liftEvents.length?`(${liftEvents.length})`:''  ;
+  if(!liftEvents.length){el.innerHTML='<div class="es">Lift detection active during webcam.</div>';return}
+  el.innerHTML=liftEvents.slice(-5).reverse().map(e=>`<div class="lift-item">
+    <div class="li-title">Lift at ${e.time}</div>
+    <div>Trunk: ${e.startTrunk}° → ${e.endTrunk}° &nbsp; H=${e.H}" V=${e.V_start}→${e.V_end}" D=${e.D}"</div>
+  </div>`).join('');
+}
+
+/* ═══ UTIL ═══ */
+function ss(s,t){document.getElementById('sd').className='dot '+({ready:'dt-on',active:'dt-on',warn:'dt-w',idle:'dt-off'}[s]||'dt-off');document.getElementById('stxt').textContent=t}
+function setBL(id,t){const s=document.getElementById(id)?.querySelector('span');if(s)s.textContent=t}
+function dl(content,type,name){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([content],{type}));a.download=name;a.click()}
+
+// Load saved data on init
+loadStations();
+renderDash();
+updateStationSelects();
+
+/* ═══ API KEY ═══ */
+function getApiKey(){return localStorage.getItem('antora_api_key')||''}
+window.openApiKeyModal=function(){
+  document.getElementById('apiKeyInput').value=getApiKey();
+  document.getElementById('apiKeyModal').classList.remove('h');
+};
+window.saveApiKey=function(){
+  const key=document.getElementById('apiKeyInput').value.trim();
+  if(key)localStorage.setItem('antora_api_key',key);
+  document.getElementById('apiKeyModal').classList.add('h');
+  document.getElementById('apiKeyBtn').style.borderColor=key?'rgba(46,125,50,.8)':'rgba(255,255,255,.4)';
+};
+window.clearApiKey=function(){
+  localStorage.removeItem('antora_api_key');
+  document.getElementById('apiKeyInput').value='';
+  document.getElementById('apiKeyBtn').style.borderColor='rgba(255,255,255,.4)';
+  document.getElementById('apiKeyModal').classList.add('h');
+};
+// Update button color on load
+(function(){if(getApiKey())document.getElementById('apiKeyBtn').style.borderColor='rgba(46,125,50,.8)'})();
+
+async function callClaude(messages,maxTokens){
+  const key=getApiKey();
+  if(!key){alert('Set your Anthropic API key first (click API Key in the header).');return null}
+  const resp=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:maxTokens||1000,messages})
+  });
+  if(!resp.ok){const err=await resp.text();throw new Error(`API error ${resp.status}: ${err}`)}
+  return await resp.json();
+}
+
+/* ═══ DARK MODE ═══ */
+window.toggleDark=function(){
+  document.body.classList.toggle('dark');
+  document.getElementById('darkBtn').textContent=document.body.classList.contains('dark')?'Light Mode':'Dark Mode';
+};
+
+/* ═══ GITHUB CLOUD SYNC ═══ */
+function getSyncConfig(){
+  try{return JSON.parse(localStorage.getItem('ember_sync'))||{}}catch(e){return{}}
+}
+function saveSyncConfig(cfg){localStorage.setItem('ember_sync',JSON.stringify(cfg))}
+
+window.openSyncModal=function(){
+  const cfg=getSyncConfig();
+  document.getElementById('syncOwner').value=cfg.owner||'';
+  document.getElementById('syncRepo').value=cfg.repo||'';
+  document.getElementById('syncToken').value=cfg.token||'';
+  document.getElementById('syncMsg').className='auth-msg';
+  document.getElementById('syncModal').classList.remove('h');
+};
+
+window.pushToCloud=async function(){
+  const owner=document.getElementById('syncOwner').value.trim();
+  const repo=document.getElementById('syncRepo').value.trim();
+  const token=document.getElementById('syncToken').value.trim();
+  const msg=document.getElementById('syncMsg');
+  if(!owner||!repo||!token){msg.textContent='Fill in all fields.';msg.className='auth-msg err';return}
+  saveSyncConfig({owner,repo,token});
+  msg.textContent='Pushing...';msg.className='auth-msg ok';
+
+  try{
+    // Collect all data
+    const data={
+      stations:stations,
+      users:getUsers(),
+      lastSync:new Date().toISOString(),
+      syncedBy:getSession()?.name||'Unknown'
+    };
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
+
+    // Check if file exists (to get SHA for update)
+    let sha=null;
+    try{
+      const check=await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/data.json`,{
+        headers:{'Authorization':'token '+token}
+      });
+      if(check.ok){const existing=await check.json();sha=existing.sha}
+    }catch(e){}
+
+    // Push data.json
+    const body={message:'EMBER sync: '+new Date().toLocaleString(),content};
+    if(sha)body.sha=sha;
+    const resp=await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/data.json`,{
+      method:'PUT',
+      headers:{'Authorization':'token '+token,'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+    if(!resp.ok){const err=await resp.json();throw new Error(err.message||'Push failed')}
+    msg.textContent='Pushed successfully. All devices will see this data.';msg.className='auth-msg ok';
+    document.getElementById('syncBtn').style.borderColor='rgba(46,125,50,.8)';
+  }catch(e){
+    msg.textContent='Error: '+e.message;msg.className='auth-msg err';
+  }
+};
+
+window.pullFromCloud=async function(){
+  const owner=document.getElementById('syncOwner').value.trim();
+  const repo=document.getElementById('syncRepo').value.trim();
+  const token=document.getElementById('syncToken').value.trim();
+  const msg=document.getElementById('syncMsg');
+  if(!owner||!repo){msg.textContent='Enter GitHub username and repo name.';msg.className='auth-msg err';return}
+  if(token)saveSyncConfig({owner,repo,token});
+  msg.textContent='Pulling...';msg.className='auth-msg ok';
+
+  try{
+    // Public repos can be read without a token
+    const resp=await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/data.json?t=${Date.now()}`);
+    if(!resp.ok)throw new Error('No data.json found in repo. Push data first.');
+    const data=await resp.json();
+
+    // Merge data
+    if(data.stations){stations=data.stations;saveStations()}
+    if(data.users){
+      const existing=getUsers();
+      const merged=[...existing];
+      data.users.forEach(u=>{if(!merged.find(e=>e.email===u.email))merged.push(u)});
+      saveUsers(merged);
+    }
+    renderDash();updateStationSelects();
+    msg.textContent=`Pulled ${data.stations?.length||0} stations, ${data.users?.length||0} users. Last synced by ${data.syncedBy||'unknown'} at ${data.lastSync||'unknown'}.`;
+    msg.className='auth-msg ok';
+    document.getElementById('syncBtn').style.borderColor='rgba(46,125,50,.8)';
+  }catch(e){
+    msg.textContent='Error: '+e.message;msg.className='auth-msg err';
+  }
+};
+
+// Auto-pull on load if sync is configured
+(function(){
+  const cfg=getSyncConfig();
+  if(cfg.owner&&cfg.repo){
+    document.getElementById('syncBtn').style.borderColor='rgba(46,125,50,.8)';
+    // Silent auto-pull
+    fetch(`https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/main/data.json?t=${Date.now()}`)
+      .then(r=>{if(r.ok)return r.json();throw new Error()})
+      .then(data=>{
+        if(data.stations&&data.stations.length>0){
+          stations=data.stations;saveStations();renderDash();updateStationSelects();
+        }
+        if(data.users){
+          const existing=getUsers();
+          const merged=[...existing];
+          data.users.forEach(u=>{if(!merged.find(e=>e.email===u.email))merged.push(u)});
+          saveUsers(merged);
+        }
+      })
+      .catch(()=>{});
+  }
+})();
+
+/* ═══ FULLSCREEN ═══ */
+window.toggleFullscreen=function(){
+  const el=document.getElementById('ca');
+  if(!document.fullscreenElement){el.requestFullscreen().catch(()=>{})}
+  else{document.exitFullscreen()}
+};
+
+/* ═══ STATION SEARCH ═══ */
+window.filterStations=function(){
+  const q=document.getElementById('stationSearch').value.toLowerCase().trim();
+  const cards=document.querySelectorAll('.station-card');
+  cards.forEach(card=>{card.style.display=(!q||card.textContent.toLowerCase().includes(q))?'':'none'});
+};
+
+/* ═══ KEYBOARD SHORTCUTS ═══ */
+document.addEventListener('keydown',function(e){
+  // Only trigger when not typing in an input
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.tagName==='SELECT')return;
+  // Only work in capture view
+  if(!document.getElementById('v-capture').classList.contains('on'))return;
+
+  if(e.code==='Space'&&!document.getElementById('bSnap').disabled){
+    e.preventDefault();
+    window.snap();
+  }
+  if(e.code==='KeyR'&&!document.getElementById('bRec').disabled){
+    e.preventDefault();
+    window.toggleRec();
+  }
+});
+
+/* ═══ DRAG AND DROP ═══ */
+const ca=document.getElementById('ca');
+ca.addEventListener('dragover',function(e){e.preventDefault();ca.classList.add('drag-over')});
+ca.addEventListener('dragleave',function(){ca.classList.remove('drag-over')});
+ca.addEventListener('drop',function(e){
+  e.preventDefault();ca.classList.remove('drag-over');
+  const file=e.dataTransfer.files[0];
+  if(!file)return;
+  // Reuse the upload handler by creating a fake event
+  const fakeEvent={target:{files:[file],value:''},preventDefault:()=>{}};
+  window.handleUpload(fakeEvent);
+});
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}</script>
+</body>
+</html>
