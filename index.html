@@ -178,6 +178,7 @@ textarea{resize:vertical;min-height:60px}
   .sbar{font-size:9px;padding:4px 8px}
   .station-card{padding:12px}
   .station-card h4{font-size:12px}
+  .review-grid{grid-template-columns:1fr}
 }
 @media(max-width:480px){
   .nav{gap:1px}
@@ -188,6 +189,30 @@ textarea{resize:vertical;min-height:60px}
   .kpi .kpi-val{font-size:16px}
   .dash-header .btn-primary{font-size:9px;padding:4px 8px}
   #stationSelect{min-width:80px!important}
+  .cap-right{max-height:40vh}
+  .tb{padding:4px 6px;gap:2px}
+  .btn{padding:4px 6px;font-size:9px}
+  .ic{width:14px;height:14px}
+  .hdr h1{font-size:11px}
+  .ps{padding:10px}
+  .ps h3{font-size:8px;margin-bottom:6px}
+  .sc{padding:8px;margin-bottom:4px}
+  .sc .sv{font-size:20px}
+  .at td{padding:3px 2px;font-size:9px}
+  .mi{padding:6px;gap:6px}
+  .mi img{width:40px;height:30px}
+  .mi .il{font-size:9px}
+  .mi .is{font-size:8px}
+  .hazard-item{padding:6px 8px;font-size:9px}
+  .niosh-grid{grid-template-columns:1fr}
+  .niosh-grid label{font-size:9px}
+  .report-layout{padding:8px}
+  .tha-preview{padding:8px;font-size:10px}
+  .tha-preview h2{font-size:13px}
+  .tha-preview table{font-size:9px}
+  .tha-preview th,.tha-preview td{padding:4px}
+  .review-panel{padding:12px}
+  .auth-box{padding:20px}
 }
 
 /* Dark mode */
@@ -276,6 +301,7 @@ body.dark .ca.drag-over::after{background:rgba(0,0,0,.85);color:#fff}
   <div class="hdr-spacer"></div>
   <button class="dark-toggle" onclick="toggleDark()" id="darkBtn">Dark Mode</button>
   <button class="dark-toggle" onclick="openApiKeyModal()" id="apiKeyBtn" style="border-color:rgba(255,255,255,.4)">API Key</button>
+  <button class="dark-toggle" onclick="openSyncModal()" id="syncBtn">Sync</button>
   <span id="userBadge" class="user-badge"></span>
   <button class="dark-toggle" id="adminBtn" onclick="openAdmin()" style="display:none">Manage Users</button>
   <button class="dark-toggle" onclick="doLogout()">Sign Out</button>
@@ -313,6 +339,7 @@ body.dark .ca.drag-over::after{background:rgba(0,0,0,.85);color:#fff}
         <select id="stationSelect" style="font-size:11px;padding:5px 8px;min-width:160px"><option value="">— No Station —</option></select>
         <div class="sep"></div>
         <button class="btn" id="bW" onclick="toggleWebcam()"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="13" r="3"/><path d="M2 9V7a2 2 0 012-2h3l2-2h6l2 2h3a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V9z"/></svg><span>Webcam</span></button>
+        <button class="btn" id="bFlip" onclick="flipCamera()" disabled title="Flip Camera"><svg class="ic" viewBox="0 0 24 24"><path d="M20 7l-4-4v3H8a4 4 0 00-4 4v2"/><path d="M4 17l4 4v-3h8a4 4 0 004-4v-2"/></svg><span>Flip</span></button>
         <label class="btn"><svg class="ic" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>Upload</span><input type="file" accept="image/*,video/*,.webm,.mp4,.mov" onchange="handleUpload(event)"></label>
         <div class="sep"></div>
         <button class="btn" id="bRec" onclick="toggleRec()" disabled><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" fill="currentColor" stroke="none"/></svg><span>Record</span></button>
@@ -449,6 +476,27 @@ body.dark .ca.drag-over::after{background:rgba(0,0,0,.85);color:#fff}
   </div>
 </div>
 
+<!-- ═══ SYNC SETTINGS MODAL ═══ -->
+<div class="modal-bg h" id="syncModal">
+  <div class="modal">
+    <h3>Cloud Sync</h3>
+    <p style="font-size:11px;color:var(--tx2);margin-bottom:8px">Sync all stations, scores, users, and reviews across devices via your GitHub repo. Data is stored as a JSON file in your repository.</p>
+    <label>GitHub Username</label>
+    <input type="text" id="syncOwner" placeholder="arshamk10" style="width:100%">
+    <label>Repository Name</label>
+    <input type="text" id="syncRepo" placeholder="EMBER" style="width:100%">
+    <label>Personal Access Token</label>
+    <input type="password" id="syncToken" placeholder="ghp_..." style="width:100%;font-family:var(--m)">
+    <div style="margin-top:6px;font-size:9px;color:var(--tx2)">Token needs <strong>repo</strong> permission. <a href="https://github.com/settings/tokens/new?scopes=repo&description=EMBER+Sync" target="_blank" style="color:var(--ac)">Create one here</a></div>
+    <div class="auth-msg" id="syncMsg" style="margin-top:8px"></div>
+    <div class="btn-row">
+      <button class="btn" onclick="pullFromCloud()" style="border-color:var(--bl);color:var(--bl)">Pull Data</button>
+      <button class="btn" onclick="pushToCloud()" style="border-color:var(--gn);color:var(--gn)">Push Data</button>
+      <button class="btn" onclick="document.getElementById('syncModal').classList.add('h')">Close</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import{PoseLandmarker,FilesetResolver,DrawingUtils}from"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.18/vision_bundle.mjs";
 
@@ -579,6 +627,7 @@ const BC=[[1,1,1,2,3,3,4,5,6,7,7,7],[1,2,2,3,4,4,5,6,6,7,7,8],[2,3,3,3,4,5,6,7,7
 
 /* ═══ STATE ═══ */
 let plm=null,wcRun=false,lastTS=-1,animId=null;
+let cameraFacing='environment';
 let snaps=[],recs=[],latA=null,latS=null;
 let mr=null,recC=[],isRec=false,recSt=0,recTmr=null,recDI=null;
 let aData=[],isAna=false,vidLoaded=false;
@@ -761,10 +810,27 @@ const n=res.landmarks?.length||0;if(n>0){updateUI(rawAng(res.landmarks[0]));dete
 animId=requestAnimationFrame(predict)}
 
 window.toggleWebcam=async function(){if(wcRun){if(isRec)window.toggleRec();wcRun=false;if(animId)cancelAnimationFrame(animId);vid.srcObject?.getTracks().forEach(t=>t.stop());vid.style.display='none';vid.controls=false;vid.removeAttribute('src');vid.srcObject=null;phEl.style.display='';vidLoaded=false;smoothed=null;
-document.getElementById('bW').classList.remove('on');setBL('bW','Webcam');document.getElementById('bSnap').disabled=true;document.getElementById('bRec').disabled=true;document.getElementById('bAna').disabled=true;document.getElementById('bScan').disabled=true;document.getElementById('bClassify').disabled=true;document.getElementById('pb').classList.add('h');document.getElementById('pcount').classList.add('h');ss('idle','Idle');return}
-try{await plm.setOptions({runningMode:"VIDEO"});const s=await navigator.mediaDevices.getUserMedia({video:{width:1280,height:720,facingMode:'environment'}});vid.srcObject=s;vid.controls=false;vid.removeAttribute('src');vid.style.display='block';uimg.style.display='none';phEl.style.display='none';
-document.getElementById('bW').classList.add('on');setBL('bW','Stop');document.getElementById('bSnap').disabled=false;document.getElementById('bRec').disabled=false;document.getElementById('bAna').disabled=true;document.getElementById('bScan').disabled=false;document.getElementById('bClassify').disabled=false;vidLoaded=false;smoothed=null;ss('active','Webcam active');
+document.getElementById('bW').classList.remove('on');setBL('bW','Webcam');document.getElementById('bSnap').disabled=true;document.getElementById('bRec').disabled=true;document.getElementById('bAna').disabled=true;document.getElementById('bScan').disabled=true;document.getElementById('bClassify').disabled=true;document.getElementById('bFlip').disabled=true;document.getElementById('pb').classList.add('h');document.getElementById('pcount').classList.add('h');ss('idle','Idle');return}
+try{await plm.setOptions({runningMode:"VIDEO"});const s=await navigator.mediaDevices.getUserMedia({video:{width:1280,height:720,facingMode:cameraFacing}});vid.srcObject=s;vid.controls=false;vid.removeAttribute('src');vid.style.display='block';uimg.style.display='none';phEl.style.display='none';
+document.getElementById('bW').classList.add('on');setBL('bW','Stop');document.getElementById('bSnap').disabled=false;document.getElementById('bRec').disabled=false;document.getElementById('bAna').disabled=true;document.getElementById('bScan').disabled=false;document.getElementById('bClassify').disabled=false;document.getElementById('bFlip').disabled=false;vidLoaded=false;smoothed=null;ss('active','Webcam active');
 vid.onloadeddata=()=>{wcRun=true;lastTS=-1;predict()}}catch(e){alert('Webcam error: '+e.message)}};
+
+/* ═══ FLIP CAMERA ═══ */
+window.flipCamera=async function(){
+  if(!wcRun)return;
+  cameraFacing=cameraFacing==='environment'?'user':'environment';
+  // Stop current stream and restart with new facing
+  wcRun=false;if(animId)cancelAnimationFrame(animId);
+  vid.srcObject?.getTracks().forEach(t=>t.stop());
+  try{
+    const s=await navigator.mediaDevices.getUserMedia({video:{width:1280,height:720,facingMode:cameraFacing}});
+    vid.srcObject=s;
+    vid.onloadeddata=()=>{wcRun=true;lastTS=-1;predict()};
+  }catch(e){
+    // If requested facing not available, flip back
+    cameraFacing=cameraFacing==='environment'?'user':'environment';
+  }
+};
 
 /* ═══ RECORDING ═══ */
 window.toggleRec=function(){if(!isRec){const s=vid.srcObject;if(!s)return;const r2=document.createElement('canvas');r2.width=vid.videoWidth;r2.height=vid.videoHeight;const rctx=r2.getContext('2d');
@@ -1458,6 +1524,120 @@ window.toggleDark=function(){
   document.body.classList.toggle('dark');
   document.getElementById('darkBtn').textContent=document.body.classList.contains('dark')?'Light Mode':'Dark Mode';
 };
+
+/* ═══ GITHUB CLOUD SYNC ═══ */
+function getSyncConfig(){
+  try{return JSON.parse(localStorage.getItem('ember_sync'))||{}}catch(e){return{}}
+}
+function saveSyncConfig(cfg){localStorage.setItem('ember_sync',JSON.stringify(cfg))}
+
+window.openSyncModal=function(){
+  const cfg=getSyncConfig();
+  document.getElementById('syncOwner').value=cfg.owner||'';
+  document.getElementById('syncRepo').value=cfg.repo||'';
+  document.getElementById('syncToken').value=cfg.token||'';
+  document.getElementById('syncMsg').className='auth-msg';
+  document.getElementById('syncModal').classList.remove('h');
+};
+
+window.pushToCloud=async function(){
+  const owner=document.getElementById('syncOwner').value.trim();
+  const repo=document.getElementById('syncRepo').value.trim();
+  const token=document.getElementById('syncToken').value.trim();
+  const msg=document.getElementById('syncMsg');
+  if(!owner||!repo||!token){msg.textContent='Fill in all fields.';msg.className='auth-msg err';return}
+  saveSyncConfig({owner,repo,token});
+  msg.textContent='Pushing...';msg.className='auth-msg ok';
+
+  try{
+    // Collect all data
+    const data={
+      stations:stations,
+      users:getUsers(),
+      lastSync:new Date().toISOString(),
+      syncedBy:getSession()?.name||'Unknown'
+    };
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify(data,null,2))));
+
+    // Check if file exists (to get SHA for update)
+    let sha=null;
+    try{
+      const check=await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/data.json`,{
+        headers:{'Authorization':'token '+token}
+      });
+      if(check.ok){const existing=await check.json();sha=existing.sha}
+    }catch(e){}
+
+    // Push data.json
+    const body={message:'EMBER sync: '+new Date().toLocaleString(),content};
+    if(sha)body.sha=sha;
+    const resp=await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/data.json`,{
+      method:'PUT',
+      headers:{'Authorization':'token '+token,'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+    if(!resp.ok){const err=await resp.json();throw new Error(err.message||'Push failed')}
+    msg.textContent='Pushed successfully. All devices will see this data.';msg.className='auth-msg ok';
+    document.getElementById('syncBtn').style.borderColor='rgba(46,125,50,.8)';
+  }catch(e){
+    msg.textContent='Error: '+e.message;msg.className='auth-msg err';
+  }
+};
+
+window.pullFromCloud=async function(){
+  const owner=document.getElementById('syncOwner').value.trim();
+  const repo=document.getElementById('syncRepo').value.trim();
+  const token=document.getElementById('syncToken').value.trim();
+  const msg=document.getElementById('syncMsg');
+  if(!owner||!repo){msg.textContent='Enter GitHub username and repo name.';msg.className='auth-msg err';return}
+  if(token)saveSyncConfig({owner,repo,token});
+  msg.textContent='Pulling...';msg.className='auth-msg ok';
+
+  try{
+    // Public repos can be read without a token
+    const resp=await fetch(`https://raw.githubusercontent.com/${owner}/${repo}/main/data.json?t=${Date.now()}`);
+    if(!resp.ok)throw new Error('No data.json found in repo. Push data first.');
+    const data=await resp.json();
+
+    // Merge data
+    if(data.stations){stations=data.stations;saveStations()}
+    if(data.users){
+      const existing=getUsers();
+      const merged=[...existing];
+      data.users.forEach(u=>{if(!merged.find(e=>e.email===u.email))merged.push(u)});
+      saveUsers(merged);
+    }
+    renderDash();updateStationSelects();
+    msg.textContent=`Pulled ${data.stations?.length||0} stations, ${data.users?.length||0} users. Last synced by ${data.syncedBy||'unknown'} at ${data.lastSync||'unknown'}.`;
+    msg.className='auth-msg ok';
+    document.getElementById('syncBtn').style.borderColor='rgba(46,125,50,.8)';
+  }catch(e){
+    msg.textContent='Error: '+e.message;msg.className='auth-msg err';
+  }
+};
+
+// Auto-pull on load if sync is configured
+(function(){
+  const cfg=getSyncConfig();
+  if(cfg.owner&&cfg.repo){
+    document.getElementById('syncBtn').style.borderColor='rgba(46,125,50,.8)';
+    // Silent auto-pull
+    fetch(`https://raw.githubusercontent.com/${cfg.owner}/${cfg.repo}/main/data.json?t=${Date.now()}`)
+      .then(r=>{if(r.ok)return r.json();throw new Error()})
+      .then(data=>{
+        if(data.stations&&data.stations.length>0){
+          stations=data.stations;saveStations();renderDash();updateStationSelects();
+        }
+        if(data.users){
+          const existing=getUsers();
+          const merged=[...existing];
+          data.users.forEach(u=>{if(!merged.find(e=>e.email===u.email))merged.push(u)});
+          saveUsers(merged);
+        }
+      })
+      .catch(()=>{});
+  }
+})();
 
 /* ═══ FULLSCREEN ═══ */
 window.toggleFullscreen=function(){
